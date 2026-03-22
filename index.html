@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0c0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crash Map">
+<meta name="description" content="Historic crash data for Pasco and Hillsborough County, FL">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>FL Crash Map</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:#0a0c0f; --panel:#10141a; --border:#1e2530;
+    --accent:#ff3c3c; --accent2:#ff8c00; --text:#e8e0d4; --muted:#5a6070;
+    --fatal:#ff2020; --injury:#ff8c00; --pd:#3b82f6;
+  }
+  html,body { margin:0; padding:0; height:100%; overflow:hidden; background:var(--bg); }
+  body { color:var(--text); font-family:'DM Mono',monospace; display:flex; flex-direction:column; }
+
+  /* ── HEADER ── */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 16px; background:var(--panel); border-bottom:1px solid var(--border);
+    flex-shrink:0; z-index:2000;
+  }
+  .hl { display:flex; align-items:baseline; gap:10px; }
+  h1 { font-family:'Bebas Neue',sans-serif; font-size:1.55rem; color:var(--accent); letter-spacing:.08em; line-height:1; }
+  .sub { font-size:.58rem; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; }
+  .badge { padding:1px 5px; font-size:.5rem; background:rgba(59,130,246,.15); color:var(--pd); border:1px solid rgba(59,130,246,.3); margin-left:5px; letter-spacing:.08em; }
+
+  .stats { display:flex; gap:16px; }
+  .stat { text-align:right; }
+  .sn { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; line-height:1; }
+  .sl { font-size:.52rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
+  .sn.t{color:var(--text);} .sn.f{color:var(--fatal);} .sn.i{color:var(--accent2);}
+
+  /* ── LAYOUT ── */
+  .wrap { display:flex; flex:1; overflow:hidden; min-height:0; }
+  #map { flex:1; min-width:0; background:#0d1117; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width:220px; flex-shrink:0; background:var(--panel);
+    border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden;
+  }
+  .ss { padding:12px 14px; border-bottom:1px solid var(--border); }
+  .slabel { font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+
+  .fbtn {
+    display:flex; align-items:center; gap:7px; width:100%;
+    background:none; border:1px solid var(--border); color:var(--text);
+    padding:6px 9px; font-family:'DM Mono',monospace; font-size:.66rem;
+    cursor:pointer; margin-bottom:5px; letter-spacing:.04em; transition:all .15s; text-align:left;
+  }
+  .fbtn:last-child{margin-bottom:0;}
+  .fbtn:hover{border-color:var(--muted);}
+  .fbtn.on-f{border-color:var(--fatal);background:rgba(255,32,32,.08);}
+  .fbtn.on-i{border-color:var(--accent2);background:rgba(255,140,0,.08);}
+  .fbtn.on-p{border-color:var(--pd);background:rgba(59,130,246,.08);}
+
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .df{background:var(--fatal);box-shadow:0 0 5px var(--fatal);}
+  .di{background:var(--accent2);box-shadow:0 0 5px var(--accent2);}
+  .dp{background:var(--pd);box-shadow:0 0 5px var(--pd);}
+
+  .vtog{display:flex;gap:5px;}
+  .vbtn{
+    flex:1; background:none; border:1px solid var(--border); color:var(--muted);
+    padding:5px; font-family:'DM Mono',monospace; font-size:.6rem;
+    cursor:pointer; transition:all .15s; letter-spacing:.07em;
+  }
+  .vbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(255,60,60,.08);}
+
+  /* year filter */
+  .yfilter { display:flex; gap:4px; flex-wrap:wrap; }
+  .ybtn {
+    background:none; border:1px solid var(--border); color:var(--muted);
+    padding:3px 7px; font-family:'DM Mono',monospace; font-size:.58rem;
+    cursor:pointer; transition:all .15s; letter-spacing:.05em;
+  }
+  .ybtn.on { border-color:var(--accent2); color:var(--accent2); background:rgba(255,140,0,.08); }
+
+  .rlist{flex:1;overflow-y:auto;padding:6px 0;}
+  .rlist::-webkit-scrollbar{width:2px;}
+  .rlist::-webkit-scrollbar-thumb{background:var(--border);}
+  .ri{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:5px 14px; border-bottom:1px solid rgba(30,37,48,.5);
+    cursor:pointer; transition:background .1s;
+  }
+  .ri:hover{background:rgba(255,60,60,.05);}
+  .rn{font-size:.6rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:148px;}
+  .rc{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--accent);}
+
+  .statusbar{
+    padding:7px 14px; border-top:1px solid var(--border);
+    font-size:.56rem; color:var(--muted); letter-spacing:.07em;
+    display:flex; align-items:center; gap:5px;
+  }
+  .pulse{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+  .pulse.loading{background:var(--accent);animation:pulse 1.2s infinite;}
+  .pulse.ok{background:#22c55e;}
+  .pulse.err{background:var(--fatal);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+
+  /* ── OVERLAY ── */
+  #overlay{
+    position:absolute; inset:0; background:rgba(10,12,15,.9);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:1000; gap:14px;
+  }
+  .spin{
+    width:28px; height:28px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%;
+    animation:spin .75s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .ot{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.14em;color:var(--accent);}
+  .os{font-size:.6rem;color:var(--muted);letter-spacing:.1em;}
+
+  /* ── POPUP ── */
+  .leaflet-popup-content-wrapper{
+    background:var(--panel)!important; border:1px solid var(--border)!important;
+    border-radius:0!important; color:var(--text)!important;
+    box-shadow:0 4px 20px rgba(0,0,0,.6)!important;
+  }
+  .leaflet-popup-content{margin:10px 14px!important;}
+  .leaflet-popup-tip{background:var(--panel)!important;}
+  .pr{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--accent);letter-spacing:.07em;margin-bottom:5px;}
+  .prow{display:flex;justify-content:space-between;font-size:.6rem;padding:2px 0;border-bottom:1px solid var(--border);gap:10px;}
+  .prow:last-child{border-bottom:none;}
+  .pk{color:var(--muted);white-space:nowrap;} .pv{color:var(--text);text-align:right;}
+
+  /* ── MOBILE ── */
+  @media(max-width:600px){
+    .sidebar{display:none;}
+    header{flex-wrap:wrap;gap:6px;}
+    .stats{gap:12px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hl">
+    <h1>⚠ CRASH MAP</h1>
+    <span class="sub">Pasco &amp; Hillsborough<span class="badge">FDOT LIVE</span></span>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="sn t" id="st">—</div><div class="sl">Crashes</div></div>
+    <div class="stat"><div class="sn i" id="si">—</div><div class="sl">Injured</div></div>
+    <div class="stat"><div class="sn f" id="sf">—</div><div class="sl">Killed</div></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div style="position:relative;flex:1;min-width:0;">
+    <div id="map"></div>
+    <div id="overlay">
+      <div class="spin"></div>
+      <div class="ot">LOADING CRASH DATA</div>
+      <div class="os" id="ostat">Connecting to FDOT...</div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="ss">
+      <div class="slabel">Severity</div>
+      <button class="fbtn on-f" onclick="tog('fatal',this)"><span class="dot df"></span>Fatal</button>
+      <button class="fbtn on-i" onclick="tog('injury',this)"><span class="dot di"></span>Injury</button>
+      <button class="fbtn on-p" onclick="tog('pd',this)"><span class="dot dp"></span>Property Damage</button>
+    </div>
+
+    <div class="ss">
+      <div class="slabel">View</div>
+      <div class="vtog">
+        <button class="vbtn on" onclick="setV('heat',this)">HEAT</button>
+        <button class="vbtn" onclick="setV('dots',this)">DOTS</button>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="slabel">Year</div>
+      <div class="yfilter" id="yfilter">
+        <button class="ybtn on" data-year="all" onclick="setYear('all',this)">ALL</button>
+      </div>
+    </div>
+
+    <div class="ss"><div class="slabel">Top Roads by Crashes</div></div>
+    <div class="rlist" id="rlist"><div style="padding:12px;font-size:.6rem;color:var(--muted);">Loading...</div></div>
+    <div class="statusbar">
+      <div class="pulse loading" id="pp"></div>
+      <span id="sb">Fetching FDOT data...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── MAP ────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [28.18, -82.50],
+  zoom: 11,
+  preferCanvas: true,
+  zoomControl: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com">CARTO</a> | Crash data: <a href="https://www.fdot.gov">FDOT</a>',
+  maxZoom: 19,
+  subdomains: 'abcd'
+}).addTo(map);
+
+// ── STATE ──────────────────────────────────────────────────
+let allCrashes = [];
+let hLayer = null, dLayer = null;
+let curView = 'heat';
+let filters = { fatal:true, injury:true, pd:true };
+let activeYear = 'all';
+
+// ── FDOT FETCH ─────────────────────────────────────────────
+const FDOT = 'https://gis.fdot.gov/arcgis/rest/services/Crashes_All/MapServer/0/query';
+const FIELDS = 'OFFICER_LATITUDE,OFFICER_LONGITUDE,ON_ROADWAY_NAME,INT_ROADWAY_NAME,NUMBER_OF_KILLED,NUMBER_OF_INJURED,CRASH_DATE,WEEKDAY_TXT';
+
+async function fetchCounty(county) {
+  const params = new URLSearchParams({
+    where: `COUNTY_TXT='${county}'`,
+    outFields: FIELDS,
+    outSR: '4326',
+    f: 'json',
+    resultRecordCount: 1000,
+    orderByFields: 'CRASH_DATE DESC'
+  });
+  const res = await fetch(`${FDOT}?${params}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${county}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+
+  return (json.features || [])
+    .map(f => f.attributes)
+    .filter(a =>
+      a.OFFICER_LATITUDE && a.OFFICER_LONGITUDE &&
+      a.OFFICER_LATITUDE > 27.5 && a.OFFICER_LATITUDE < 29 &&
+      a.OFFICER_LONGITUDE > -83 && a.OFFICER_LONGITUDE < -81.5
+    )
+    .map(a => {
+      const d = a.CRASH_DATE ? new Date(a.CRASH_DATE) : null;
+      return {
+        lat: a.OFFICER_LATITUDE,
+        lng: a.OFFICER_LONGITUDE,
+        road: (a.ON_ROADWAY_NAME || 'UNKNOWN').trim(),
+        cross: (a.INT_ROADWAY_NAME || '').trim(),
+        killed: a.NUMBER_OF_KILLED || 0,
+        injured: a.NUMBER_OF_INJURED || 0,
+        date: d ? d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—',
+        year: d ? d.getFullYear() : null,
+        day: a.WEEKDAY_TXT || '',
+        sev: (a.NUMBER_OF_KILLED > 0) ? 'fatal' : (a.NUMBER_OF_INJURED > 0) ? 'injury' : 'pd'
+      };
+    });
+}
+
+// ── VISIBLE SUBSET ─────────────────────────────────────────
+function vis() {
+  return allCrashes.filter(c =>
+    filters[c.sev] &&
+    (activeYear === 'all' || c.year === activeYear)
+  );
+}
+
+function col(sev) {
+  return sev==='fatal' ? '#ff2020' : sev==='injury' ? '#ff8c00' : '#3b82f6';
+}
+
+// ── RENDER ─────────────────────────────────────────────────
+function render() {
+  if (hLayer) { map.removeLayer(hLayer); hLayer = null; }
+  if (dLayer) { map.removeLayer(dLayer); dLayer = null; }
+  const v = vis();
+  if (!v.length) return;
+
+  if (curView === 'heat') {
+    const pts = v.map(c => [
+      c.lat, c.lng,
+      c.sev==='fatal' ? 1.0 : c.sev==='injury' ? 0.55 : 0.18
+    ]);
+    hLayer = L.heatLayer(pts, {
+      radius: 20, blur: 26, maxZoom: 17,
+      gradient: { 0.1:'#1e3a8a', 0.35:'#ff8c00', 0.7:'#ff3c3c', 1.0:'#ff0000' }
+    }).addTo(map);
+  } else {
+    dLayer = L.layerGroup();
+    v.forEach(c => {
+      const r = c.sev==='fatal' ? 7 : c.sev==='injury' ? 5 : 3.5;
+      L.circleMarker([c.lat, c.lng], {
+        radius: r,
+        fillColor: col(c.sev),
+        color: '#000',
+        weight: 0.5,
+        fillOpacity: c.sev==='fatal' ? 0.95 : 0.72
+      }).bindPopup(`
+        <div class="pr">${c.road}</div>
+        <div class="prow"><span class="pk">AT</span><span class="pv">${c.cross||'—'}</span></div>
+        <div class="prow"><span class="pk">DATE</span><span class="pv">${c.date}</span></div>
+        <div class="prow"><span class="pk">DAY</span><span class="pv">${c.day||'—'}</span></div>
+        <div class="prow"><span class="pk">KILLED</span><span class="pv" style="color:${c.killed>0?'var(--fatal)':'inherit'}">${c.killed}</span></div>
+        <div class="prow"><span class="pk">INJURED</span><span class="pv" style="color:${c.injured>0?'var(--accent2)':'inherit'}">${c.injured}</span></div>
+      `).addTo(dLayer);
+    });
+    dLayer.addTo(map);
+  }
+}
+
+function updateStats() {
+  const v = vis();
+  document.getElementById('st').textContent = v.length.toLocaleString();
+  document.getElementById('sf').textContent = v.filter(c=>c.killed>0).length.toLocaleString();
+  document.getElementById('si').textContent = v.reduce((s,c)=>s+c.injured,0).toLocaleString();
+}
+
+function buildRoadList() {
+  const v = vis();
+  const cnt = {};
+  v.forEach(c => { cnt[c.road] = (cnt[c.road]||0)+1; });
+  const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,25);
+  document.getElementById('rlist').innerHTML = sorted.map(([r,n]) => `
+    <div class="ri" onclick="fly('${r.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
+      <span class="rn">${r}</span>
+      <span class="rc">${n}</span>
+    </div>`).join('');
+}
+
+function buildYearFilter() {
+  const years = [...new Set(allCrashes.map(c=>c.year).filter(Boolean))].sort((a,b)=>b-a);
+  const yf = document.getElementById('yfilter');
+  years.forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'ybtn';
+    btn.dataset.year = y;
+    btn.textContent = y;
+    btn.onclick = () => setYear(y, btn);
+    yf.appendChild(btn);
+  });
+}
+
+// ── CONTROLS ───────────────────────────────────────────────
+function fly(road) {
+  const m = allCrashes.filter(c=>c.road===road);
+  if (!m.length) return;
+  map.fitBounds([
+    [Math.min(...m.map(c=>c.lat)), Math.min(...m.map(c=>c.lng))],
+    [Math.max(...m.map(c=>c.lat)), Math.max(...m.map(c=>c.lng))]
+  ], { padding:[50,50] });
+}
+
+function tog(type, btn) {
+  filters[type] = !filters[type];
+  const cls = type==='fatal'?'on-f':type==='injury'?'on-i':'on-p';
+  btn.classList.toggle(cls);
+  render(); updateStats(); buildRoadList();
+}
+
+function setV(v, btn) {
+  curView = v;
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+function setYear(y, btn) {
+  activeYear = y === 'all' ? 'all' : parseInt(y);
+  document.querySelectorAll('.ybtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  render(); updateStats(); buildRoadList();
+}
+
+// ── INIT ───────────────────────────────────────────────────
+async function init() {
+  const ostat = document.getElementById('ostat');
+  const sb    = document.getElementById('sb');
+  const pp    = document.getElementById('pp');
+  const overlay = document.getElementById('overlay');
+
+  try {
+    ostat.textContent = 'Fetching Pasco County...';
+    const pasco = await fetchCounty('PASCO');
+
+    ostat.textContent = 'Fetching Hillsborough County...';
+    const hills = await fetchCounty('HILLSBOROUGH');
+
+    allCrashes = [...pasco, ...hills];
+
+    overlay.style.display = 'none';
+    buildYearFilter();
+    render();
+    updateStats();
+    buildRoadList();
+
+    pp.className = 'pulse ok';
+    sb.textContent = `${allCrashes.length.toLocaleString()} crashes · FDOT live`;
+
+  } catch(err) {
+    ostat.textContent = 'Failed: ' + err.message;
+    sb.textContent = 'Load failed';
+    pp.className = 'pulse err';
+    console.error('FDOT error:', err);
+  }
+}
+
+// Service worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+init();
+</script>
+</body>
+</html>
