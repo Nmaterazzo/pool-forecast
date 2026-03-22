@@ -368,15 +368,12 @@ function renderDay(dayIdx){
 
   const tabOn=ds.tabOn!==false;
   const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,tabOn);
-  const recTab=uvLoss>=3?1:0; // recommend 1 tab if UV decay >=3 ppm, else no tab needed
+  const recTab=uvLoss>=3?1:0;
   const tabAmt=ds.tabAmt??recTab;
   const tabPpm=tabAmt>0?Math.round(tabAmt*2.5*10)/10:0;
-  const deficit=Math.max(0,target-fcReading);
-  const afterTabDeficit=Math.max(0,deficit-tabPpm);
-  const afterTabHypoOz=Math.round(afterTabDeficit*HYPO_OZ_PER_PPM*10)/10;
-  const hypoOz=calcHypo(fcReading,target);
-  const afterTabHypoOz=Math.round(afterTabDeficit*HYPO_OZ_PER_PPM*10)/10;
-  const hypoOz=calcHypo(fcReading,target); // total hypo if no tabs
+  const fullDeficit=Math.max(0,target-fcReading);
+  const remainingDeficit=Math.max(0,fullDeficit-tabPpm);
+  const hypoOz=Math.round(remainingDeficit*HYPO_OZ_PER_PPM*10)/10;
 
   // Projected end-of-week FC if dosed to target
   const outlook=projectFC(target,daysAhead,tabOn);
@@ -478,12 +475,12 @@ function renderDay(dayIdx){
           <div class="dose-grid">
             <!-- CAL HYPO CELL -->
             <div class="dose-cell">
-              <div class="dose-num" style="color:${afterTabDeficit>0?'var(--text)':'var(--muted)'}">
-                ${afterTabDeficit<=0?'None needed':`${afterTabHypoOz} oz`}
+              <div class="dose-num" style="color:${remainingDeficit>0?'var(--text)':'var(--muted)'}">
+                ${remainingDeficit<=0?'None needed':`${hypoOz} oz`}
               </div>
               <div class="dose-unit">73% Cal Hypo</div>
               <div class="dose-note">
-                ${afterTabDeficit>0
+                ${remainingDeficit>0
                   ?`${fcReading} + ${tabPpm} tab = ${Math.round((fcReading+tabPpm)*10)/10} → ${target} ppm`
                   :`Tabs cover full deficit`}
               </div>
