@@ -367,10 +367,10 @@ function renderDay(dayIdx){
   const obsIn=rain.obs72h??0;
 
   const tabOn=ds.tabOn!==false;
-  const effectiveTabOn=tabOn&&tabAmt>0; // offset only applies if tabs are actually being used
-  const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,effectiveTabOn);
-  const recTab=uvLoss>=3?1:0;
+  const recTab=(uv7*UV_DECAY)>=3?1:0;
   const tabAmt=ds.tabAmt??recTab;
+  const effectiveTabOn=tabOn&&tabAmt>0;
+  const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,effectiveTabOn);
   const tabPpm=tabAmt>0?Math.round(tabAmt*2.5*10)/10:0;
   const fullDeficit=Math.max(0,target-fcReading);
   const remainingDeficit=Math.max(0,fullDeficit-tabPpm);
