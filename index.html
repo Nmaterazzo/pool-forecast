@@ -424,7 +424,7 @@ function renderDay(dayIdx){
   });
 
   // FC input color
-  const inputCol=fcReading<floor*0.7?'var(--red)':fcReading<floor?'var(--yellow)':'var(--green)';
+  const inputCol=fcReading<=3?'var(--red)':fcReading<=6?'var(--yellow)':'var(--green)';
 
   // Season label
   const seasonFloor=`${floor} ppm floor · water ~${wTemp}°F`;
