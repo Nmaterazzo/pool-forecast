@@ -508,7 +508,7 @@ function renderDay(dayIdx){
               <div class="dose-unit">73% Cal Hypo</div>
               <div class="dose-note">
                 ${remainingDeficit>0
-                  ?`${fcReading} + ${tabPpm} tab = ${Math.round((fcReading+tabPpm)*10)/10} → ${target} ppm`
+                  ?`${fcReading}${effectiveTabOn&&tabPpm>0?` + ${tabPpm} tab = ${Math.round((fcReading+tabPpm)*10)/10}`:''} → ${target} ppm`
                   :`Tabs cover full deficit`}
               </div>
             </div>
