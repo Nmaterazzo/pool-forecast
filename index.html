@@ -373,7 +373,8 @@ function renderDay(dayIdx){
   const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,effectiveTabOn);
   const tabPpm=tabAmt>0?Math.round(tabAmt*2.5*10)/10:0;
   const fullDeficit=Math.max(0,target-fcReading);
-  const remainingDeficit=Math.max(0,fullDeficit-tabPpm);
+  // Only reduce hypo by tab contribution if offset is on — otherwise hypo covers full deficit
+  const remainingDeficit=effectiveTabOn?Math.max(0,fullDeficit-tabPpm):fullDeficit;
   const hypoOz=Math.round(remainingDeficit*HYPO_OZ_PER_PPM*10)/10;
 
   // Projected end-of-week FC if dosed to target
@@ -489,7 +490,21 @@ function renderDay(dayIdx){
 
             <!-- TAB CELL -->
             <div class="dose-cell">
-              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">
+                <button onclick="toggleTab(${dayIdx})"
+                  style="font-family:'IBM Plex Mono',monospace;font-size:.48rem;letter-spacing:.06em;
+                  padding:3px 8px;cursor:pointer;border-radius:0;transition:all .15s;
+                  background:${effectiveTabOn?'rgba(34,211,160,.12)':'rgba(255,255,255,.04)'};
+                  border:1px solid ${effectiveTabOn?'var(--green)':'var(--border)'};
+                  color:${effectiveTabOn?'var(--green)':'var(--muted)'};">
+                  ${tabOn?'OFFSET ON':'OFFSET OFF'}
+                </button>
+                <span style="font-size:.46rem;color:var(--muted);">
+                  ${effectiveTabOn?`−${tabGain} ppm from target`:'tabs not counted'}
+                </span>
+              </div>
+              ${tabOn?`
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;">
                 ${[0,0.5,1,1.5,2].map(n=>`
                   <button onclick="setTabAmt(${dayIdx},${n})"
                     style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;padding:4px 8px;
@@ -501,20 +516,9 @@ function renderDay(dayIdx){
                   </button>`).join('')}
               </div>
               <div class="dose-unit">3" Tabs${tabAmt>0?` · +${tabPpm} ppm`:''}${tabAmt===recTab?' (rec)':''}</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:7px;">
-                <button onclick="toggleTab(${dayIdx})"
-                  style="font-family:'IBM Plex Mono',monospace;font-size:.48rem;letter-spacing:.06em;
-                  padding:2px 6px;cursor:pointer;border-radius:0;transition:all .15s;
-                  background:${effectiveTabOn?'rgba(34,211,160,.12)':'rgba(255,255,255,.04)'};
-                  border:1px solid ${effectiveTabOn?'var(--green)':'var(--border)'};
-                  color:${effectiveTabOn?'var(--green)':tabAmt===0?'rgba(74,96,128,.4)':'var(--muted)'};"
-                  ${tabAmt===0?'disabled':''}>
-                  ${tabOn?'OFFSET ON':'OFFSET OFF'}
-                </button>
-                <span style="font-size:.46rem;color:var(--muted);">
-                  ${tabAmt===0?'no tabs selected':effectiveTabOn?`−${tabGain} ppm`:'no offset'}
-                </span>
-              </div>
+              `:`
+              <div style="font-size:.52rem;color:var(--muted);line-height:1.5;">Add tabs separately<br>as needed</div>
+              `}
             </div>
           </div>
         </div>
