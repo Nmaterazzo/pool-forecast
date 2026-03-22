@@ -2,425 +2,681 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#0a0c0f">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b1220">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Crash Map">
-<meta name="description" content="Historic crash data for Pasco and Hillsborough County, FL">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>FL Crash Map</title>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-
+<meta name="apple-mobile-web-app-title" content="Pool Forecast">
+<title>Pool Forecast</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#0a0c0f; --panel:#10141a; --border:#1e2530;
-    --accent:#ff3c3c; --accent2:#ff8c00; --text:#e8e0d4; --muted:#5a6070;
-    --fatal:#ff2020; --injury:#ff8c00; --pd:#3b82f6;
-  }
-  html,body { margin:0; padding:0; height:100%; overflow:hidden; background:var(--bg); }
-  body { color:var(--text); font-family:'DM Mono',monospace; display:flex; flex-direction:column; }
+:root{
+  --bg:#0b1220;--card:#111827;--border:#1f2d42;
+  --blue:#38bdf8;--green:#22d3a0;--yellow:#fbbf24;
+  --red:#f87171;--text:#e2eaf4;--muted:#4a6080;--salt:#a78bfa;
+  --orange:#fb923c;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{height:100%;height:-webkit-fill-available;}
+body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;padding-bottom:48px;}
 
-  /* ── HEADER ── */
-  header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:9px 16px; background:var(--panel); border-bottom:1px solid var(--border);
-    flex-shrink:0; z-index:2000;
-  }
-  .hl { display:flex; align-items:baseline; gap:10px; }
-  h1 { font-family:'Bebas Neue',sans-serif; font-size:1.55rem; color:var(--accent); letter-spacing:.08em; line-height:1; }
-  .sub { font-size:.58rem; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; }
-  .badge { padding:1px 5px; font-size:.5rem; background:rgba(59,130,246,.15); color:var(--pd); border:1px solid rgba(59,130,246,.3); margin-left:5px; letter-spacing:.08em; }
+.hdr{padding:14px 15px 10px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.app-title{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;color:var(--blue);line-height:1;}
+.app-sub{font-size:.52rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
+.uv-box{text-align:right;}
+.uv-val{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;line-height:1;}
+.uv-lbl{font-size:.46rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
 
-  .stats { display:flex; gap:16px; }
-  .stat { text-align:right; }
-  .sn { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; line-height:1; }
-  .sl { font-size:.52rem; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
-  .sn.t{color:var(--text);} .sn.f{color:var(--fatal);} .sn.i{color:var(--accent2);}
+.rain-row{display:flex;gap:0;}
+.rcol{flex:1;text-align:center;padding:0 4px;border-right:1px solid var(--border);}
+.rcol:last-child{border-right:none;}
+.rcol-lbl{font-size:.42rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+.rcol-val{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;}
+.data-src{font-size:.44rem;color:var(--muted);margin-top:6px;letter-spacing:.04em;}
 
-  /* ── LAYOUT ── */
-  .wrap { display:flex; flex:1; overflow:hidden; min-height:0; }
-  #map { flex:1; min-width:0; background:#0d1117; }
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:9px 2px 7px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.58rem;
+  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:center;}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.tab-dot{width:5px;height:5px;border-radius:50%;margin:0 auto 3px;background:var(--border);}
+.tab.active .tab-dot{background:var(--blue);}
+.td-g{background:var(--green);}.td-y{background:var(--yellow);}.td-r{background:var(--red);}
 
-  /* ── SIDEBAR ── */
-  .sidebar {
-    width:220px; flex-shrink:0; background:var(--panel);
-    border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden;
-  }
-  .ss { padding:12px 14px; border-bottom:1px solid var(--border); }
-  .slabel { font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.content{padding:13px;display:flex;flex-direction:column;gap:11px;}
 
-  .fbtn {
-    display:flex; align-items:center; gap:7px; width:100%;
-    background:none; border:1px solid var(--border); color:var(--text);
-    padding:6px 9px; font-family:'DM Mono',monospace; font-size:.66rem;
-    cursor:pointer; margin-bottom:5px; letter-spacing:.04em; transition:all .15s; text-align:left;
-  }
-  .fbtn:last-child{margin-bottom:0;}
-  .fbtn:hover{border-color:var(--muted);}
-  .fbtn.on-f{border-color:var(--fatal);background:rgba(255,32,32,.08);}
-  .fbtn.on-i{border-color:var(--accent2);background:rgba(255,140,0,.08);}
-  .fbtn.on-p{border-color:var(--pd);background:rgba(59,130,246,.08);}
+/* FC INPUT */
+.fc-input-card{background:var(--card);border:1px solid var(--border);padding:13px;}
+.fc-lbl{font-size:.5rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:9px;}
+.fc-row{display:flex;align-items:center;gap:12px;}
+.fc-input{font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;
+  background:var(--bg);border:2px solid var(--border);color:var(--text);
+  width:110px;padding:7px 10px;text-align:center;
+  -webkit-appearance:none;appearance:none;border-radius:0;outline:none;transition:border-color .15s;}
+.fc-input:focus{border-color:var(--blue);}
+.fc-hints{display:flex;flex-direction:column;gap:3px;}
+.fc-hint{font-size:.5rem;letter-spacing:.04em;line-height:1.4;}
 
-  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-  .df{background:var(--fatal);box-shadow:0 0 5px var(--fatal);}
-  .di{background:var(--accent2);box-shadow:0 0 5px var(--accent2);}
-  .dp{background:var(--pd);box-shadow:0 0 5px var(--pd);}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 13px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015);}
+.card-title{font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.cbadge{font-size:.48rem;letter-spacing:.09em;text-transform:uppercase;padding:2px 6px;}
+.bg{background:rgba(34,211,160,.1);color:var(--green);border:1px solid rgba(34,211,160,.2);}
+.by{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.2);}
+.br{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.bs{background:rgba(167,139,250,.1);color:var(--salt);border:1px solid rgba(167,139,250,.2);}
+.bo{background:rgba(251,146,60,.1);color:var(--orange);border:1px solid rgba(251,146,60,.2);}
 
-  .vtog{display:flex;gap:5px;}
-  .vbtn{
-    flex:1; background:none; border:1px solid var(--border); color:var(--muted);
-    padding:5px; font-family:'DM Mono',monospace; font-size:.6rem;
-    cursor:pointer; transition:all .15s; letter-spacing:.07em;
-  }
-  .vbtn.on{border-color:var(--accent);color:var(--accent);background:rgba(255,60,60,.08);}
+/* DOSE TARGET */
+.target-block{padding:13px;}
+.target-hero{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;}
+.target-num{font-family:'Syne',sans-serif;font-size:3rem;font-weight:800;color:var(--blue);line-height:1;}
+.target-unit{font-size:.6rem;color:var(--muted);letter-spacing:.08em;margin-left:3px;}
+.target-sub{font-size:.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
+.target-math{text-align:right;font-size:.54rem;color:var(--muted);line-height:1.9;}
+.target-math span{color:var(--text);}
+.target-math .floor{color:var(--green);font-weight:500;}
 
-  /* year filter */
-  .yfilter { display:flex; gap:4px; flex-wrap:wrap; }
-  .ybtn {
-    background:none; border:1px solid var(--border); color:var(--muted);
-    padding:3px 7px; font-family:'DM Mono',monospace; font-size:.58rem;
-    cursor:pointer; transition:all .15s; letter-spacing:.05em;
-  }
-  .ybtn.on { border-color:var(--accent2); color:var(--accent2); background:rgba(255,140,0,.08); }
+/* Now → Target row */
+.arrow-row{display:flex;align-items:center;gap:7px;margin-bottom:10px;
+  padding:8px 10px;background:var(--bg);border:1px solid var(--border);}
+.arrow-label{font-size:.48rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.arrow-fc{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;}
+.arrow-sep{color:var(--muted);font-size:.9rem;}
+.arrow-target{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--blue);}
+.arrow-add{font-size:.54rem;color:var(--muted);margin-left:auto;}
+.arrow-add span{color:var(--text);}
 
-  .rlist{flex:1;overflow-y:auto;padding:6px 0;}
-  .rlist::-webkit-scrollbar{width:2px;}
-  .rlist::-webkit-scrollbar-thumb{background:var(--border);}
-  .ri{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:5px 14px; border-bottom:1px solid rgba(30,37,48,.5);
-    cursor:pointer; transition:background .1s;
-  }
-  .ri:hover{background:rgba(255,60,60,.05);}
-  .rn{font-size:.6rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:148px;}
-  .rc{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--accent);}
+.bar{height:7px;background:var(--border);overflow:hidden;margin-bottom:4px;}
+.bar-fill{height:100%;transition:width .4s;}
+.bar-lbls{display:flex;justify-content:space-between;font-size:.44rem;color:var(--muted);}
 
-  .statusbar{
-    padding:7px 14px; border-top:1px solid var(--border);
-    font-size:.56rem; color:var(--muted); letter-spacing:.07em;
-    display:flex; align-items:center; gap:5px;
-  }
-  .pulse{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s;}
-  .pulse.loading{background:var(--accent);animation:pulse 1.2s infinite;}
-  .pulse.ok{background:#22c55e;}
-  .pulse.err{background:var(--fatal);}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.dose-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
+.dose-cell{background:var(--card);padding:11px 12px;}
+.dose-num{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;line-height:1;}
+.dose-unit{font-size:.52rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-top:3px;}
+.dose-note{font-size:.5rem;color:var(--muted);margin-top:3px;line-height:1.4;}
+.dose-meta{padding:8px 12px;border-top:1px solid var(--border);font-size:.52rem;color:var(--muted);line-height:1.7;}
+.dose-meta span{color:var(--text);}
 
-  /* ── OVERLAY ── */
-  #overlay{
-    position:absolute; inset:0; background:rgba(10,12,15,.9);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    z-index:1000; gap:14px;
-  }
-  .spin{
-    width:28px; height:28px; border:2px solid var(--border);
-    border-top-color:var(--accent); border-radius:50%;
-    animation:spin .75s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .ot{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.14em;color:var(--accent);}
-  .os{font-size:.6rem;color:var(--muted);letter-spacing:.1em;}
+/* WEEK OUTLOOK */
+.week-row{display:flex;gap:0;border-top:1px solid var(--border);}
+.wd{flex:1;text-align:center;padding:7px 3px;border-right:1px solid var(--border);}
+.wd:last-child{border-right:none;}
+.wd-n{font-size:.44rem;color:var(--muted);letter-spacing:.08em;margin-bottom:3px;}
+.wd-fc{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;}
+.wd-uv{font-size:.42rem;margin-top:1px;}
+.wd-uv.low{color:var(--green);}.wd-uv.mod{color:var(--yellow);}.wd-uv.high{color:var(--red);}
+/* floor line indicator */
+.wd.is-floor .wd-fc::after{content:'←';font-size:.4rem;color:var(--green);margin-left:2px;}
 
-  /* ── POPUP ── */
-  .leaflet-popup-content-wrapper{
-    background:var(--panel)!important; border:1px solid var(--border)!important;
-    border-radius:0!important; color:var(--text)!important;
-    box-shadow:0 4px 20px rgba(0,0,0,.6)!important;
-  }
-  .leaflet-popup-content{margin:10px 14px!important;}
-  .leaflet-popup-tip{background:var(--panel)!important;}
-  .pr{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--accent);letter-spacing:.07em;margin-bottom:5px;}
-  .prow{display:flex;justify-content:space-between;font-size:.6rem;padding:2px 0;border-bottom:1px solid var(--border);gap:10px;}
-  .prow:last-child{border-bottom:none;}
-  .pk{color:var(--muted);white-space:nowrap;} .pv{color:var(--text);text-align:right;}
+/* LOW FC */
+.low-card{background:var(--card);border:1px solid rgba(251,146,60,.3);}
+.low-hdr{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 13px;border-bottom:1px solid rgba(251,146,60,.2);background:rgba(251,146,60,.04);}
+.low-inner{padding:11px 13px;}
+.low-desc{font-size:.54rem;color:var(--muted);line-height:1.6;margin-bottom:9px;}
+.ldrow{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border);}
+.ldrow:last-child{border-bottom:none;}
+.ldkey{font-size:.56rem;color:var(--muted);}
+.ldval{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--orange);}
+.bromide-block{margin-top:9px;background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);padding:9px 11px;}
+.bromide-title{font-size:.5rem;color:var(--red);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.bromide-txt{font-size:.54rem;color:var(--red);line-height:1.6;}
 
-  /* ── MOBILE ── */
-  @media(max-width:600px){
-    .sidebar{display:none;}
-    header{flex-wrap:wrap;gap:6px;}
-    .stats{gap:12px;}
-  }
+/* SALT */
+.srow{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 12px;border-bottom:1px solid var(--border);}
+.srow:last-child{border-bottom:none;}
+.skey{font-size:.56rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
+.sval{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;}
+.sval.ok{color:var(--green);}.sval.low{color:var(--yellow);}.sval.add{color:var(--salt);}
+
+.day-label{font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+
+.spin{display:inline-block;width:9px;height:9px;border:1.5px solid var(--border);
+  border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="hl">
-    <h1>⚠ CRASH MAP</h1>
-    <span class="sub">Pasco &amp; Hillsborough<span class="badge">FDOT LIVE</span></span>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="sn t" id="st">—</div><div class="sl">Crashes</div></div>
-    <div class="stat"><div class="sn i" id="si">—</div><div class="sl">Injured</div></div>
-    <div class="stat"><div class="sn f" id="sf">—</div><div class="sl">Killed</div></div>
-  </div>
-</header>
-
-<div class="wrap">
-  <div style="position:relative;flex:1;min-width:0;">
-    <div id="map"></div>
-    <div id="overlay">
-      <div class="spin"></div>
-      <div class="ot">LOADING CRASH DATA</div>
-      <div class="os" id="ostat">Connecting to FDOT...</div>
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="app-title">POOL FORECAST</div>
+      <div class="app-sub" id="app-sub">Hunters Green · CYA 50ppm · 10k gal</div>
+    </div>
+    <div class="uv-box">
+      <div class="uv-val" id="hdr-uv">—</div>
+      <div class="uv-lbl">UV Index</div>
     </div>
   </div>
-
-  <div class="sidebar">
-    <div class="ss">
-      <div class="slabel">Severity</div>
-      <button class="fbtn on-f" onclick="tog('fatal',this)"><span class="dot df"></span>Fatal</button>
-      <button class="fbtn on-i" onclick="tog('injury',this)"><span class="dot di"></span>Injury</button>
-      <button class="fbtn on-p" onclick="tog('pd',this)"><span class="dot dp"></span>Property Damage</button>
-    </div>
-
-    <div class="ss">
-      <div class="slabel">View</div>
-      <div class="vtog">
-        <button class="vbtn on" onclick="setV('heat',this)">HEAT</button>
-        <button class="vbtn" onclick="setV('dots',this)">DOTS</button>
-      </div>
-    </div>
-
-    <div class="ss">
-      <div class="slabel">Year</div>
-      <div class="yfilter" id="yfilter">
-        <button class="ybtn on" data-year="all" onclick="setYear('all',this)">ALL</button>
-      </div>
-    </div>
-
-    <div class="ss"><div class="slabel">Top Roads by Crashes</div></div>
-    <div class="rlist" id="rlist"><div style="padding:12px;font-size:.6rem;color:var(--muted);">Loading...</div></div>
-    <div class="statusbar">
-      <div class="pulse loading" id="pp"></div>
-      <span id="sb">Fetching FDOT data...</span>
-    </div>
+  <div class="rain-row">
+    <div class="rcol"><div class="rcol-lbl">1hr obs</div><div class="rcol-val" id="r1h" style="color:var(--blue)"><span class="spin"></span></div></div>
+    <div class="rcol"><div class="rcol-lbl">24hr obs</div><div class="rcol-val" id="r24h" style="color:var(--blue)"><span class="spin"></span></div></div>
+    <div class="rcol"><div class="rcol-lbl">48hr obs</div><div class="rcol-val" id="r48h" style="color:var(--blue)"><span class="spin"></span></div></div>
+    <div class="rcol"><div class="rcol-lbl">72hr obs</div><div class="rcol-val" id="r72h" style="color:var(--blue)"><span class="spin"></span></div></div>
+    <div class="rcol"><div class="rcol-lbl">7d fcst</div><div class="rcol-val" id="r7d" style="color:var(--green)"><span class="spin"></span></div></div>
   </div>
+  <div class="data-src" id="data-src">MRMS/IEM · WPC QPF D1–7 · loading...</div>
 </div>
 
-<script>
-// ── MAP ────────────────────────────────────────────────────
-const map = L.map('map', {
-  center: [28.18, -82.50],
-  zoom: 11,
-  preferCanvas: true,
-  zoomControl: true
-});
+<div class="tabs">
+  <button class="tab active" onclick="selDay(0,this)"><div class="tab-dot td-g" id="td0"></div>MON</button>
+  <button class="tab" onclick="selDay(1,this)"><div class="tab-dot td-g" id="td1"></div>TUE</button>
+  <button class="tab" onclick="selDay(2,this)"><div class="tab-dot td-g" id="td2"></div>WED</button>
+  <button class="tab" onclick="selDay(3,this)"><div class="tab-dot td-g" id="td3"></div>THU</button>
+  <button class="tab" onclick="selDay(4,this)"><div class="tab-dot td-g" id="td4"></div>FRI</button>
+</div>
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com">CARTO</a> | Crash data: <a href="https://www.fdot.gov">FDOT</a>',
-  maxZoom: 19,
-  subdomains: 'abcd'
-}).addTo(map);
+<div class="content" id="content"></div>
+
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────
+const POOL_GAL=10000, POOL_SQFT=450;
+const SALT_IDEAL=3200, SALT_MIN=2700, SALT_BAG_PPM=480, SALT_POOLS=4;
+const UV_DECAY=0.01;         // ppm/UV-index-hour, CYA 50 stabilized
+const HYPO_OZ_PER_PPM=1.84; // 73% cal hypo oz per ppm per 10k gal (verified against pool math app)
+const TAB_PPM_WEEK=2.5;      // 3" tab contribution over 7 days in 10k gal (~2-3 ppm)
+const RAIN_GAL_IN=POOL_SQFT*0.623;
+const FC_DEFAULT=7;
+const FC_SHOCK=20;
+
+// Season-aware floor
+function fcFloor(){
+  const m=new Date().getMonth()+1; // 1-12
+  return(m>=3&&m<=10)?7:4; // Mar-Oct = 7, Nov-Feb = 4
+}
+
+const LAT=28.131, LON=-82.352;
+const WMS_MRMS='https://mesonet.agron.iastate.edu/cgi-bin/wms/us/mrms_nn.cgi';
+const WMS_WPC='https://mapservices.weather.noaa.gov/vector/services/precip/wpc_qpf/MapServer/WMSServer';
 
 // ── STATE ──────────────────────────────────────────────────
-let allCrashes = [];
-let hLayer = null, dLayer = null;
-let curView = 'heat';
-let filters = { fatal:true, injury:true, pd:true };
-let activeYear = 'all';
+function loadDS(d){try{return JSON.parse(sessionStorage.getItem('pd_'+d))||{};}catch{return{};}}
+function saveDS(d,s){try{sessionStorage.setItem('pd_'+d,JSON.stringify(s));}catch{}}
 
-// ── FDOT FETCH ─────────────────────────────────────────────
-const FDOT = 'https://gis.fdot.gov/arcgis/rest/services/Crashes_All/MapServer/0/query';
-const FIELDS = 'OFFICER_LATITUDE,OFFICER_LONGITUDE,ON_ROADWAY_NAME,INT_ROADWAY_NAME,NUMBER_OF_KILLED,NUMBER_OF_INJURED,CRASH_DATE,WEEKDAY_TXT';
+const rain={obs1h:0,obs24h:0,obs48h:0,obs72h:0,fcast7d:0};
+let uvData=null;
+let activeDay=(()=>{const d=new Date().getDay();return d>=1&&d<=5?d-1:0;})();
 
-async function fetchCounty(county) {
-  const params = new URLSearchParams({
-    where: `COUNTY_TXT='${county}'`,
-    outFields: FIELDS,
-    outSR: '4326',
-    f: 'json',
-    resultRecordCount: 1000,
-    orderByFields: 'CRASH_DATE DESC'
+// ── MRMS PIXEL DECODE ──────────────────────────────────────
+const CM=[[0,0,255,0],[0,255,255,12.7],[0,255,0,25.4],[255,255,0,50.8],
+  [255,128,0,76.2],[255,0,0,101.6],[180,0,180,152.4],[128,0,128,203.2],[255,255,255,254]];
+function px2mm(r,g,b){
+  if(r<=3&&g<=3&&b<=3)return null;
+  if(r>200&&g>200&&b>200)return null;
+  if(Math.abs(r-g)<15&&Math.abs(g-b)<15&&Math.abs(r-b)<15)return null;
+  let best=Infinity,mm=null;
+  for(let i=0;i<CM.length-1;i++){
+    const[r1,g1,b1,m1]=CM[i],[r2,g2,b2,m2]=CM[i+1];
+    const dx=r2-r1,dy=g2-g1,dz=b2-b1,l=dx*dx+dy*dy+dz*dz;
+    if(!l)continue;
+    const t=Math.max(0,Math.min(1,((r-r1)*dx+(g-g1)*dy+(b-b1)*dz)/l));
+    const d=(r-r1-t*dx)**2+(g-g1-t*dy)**2+(b-b1-t*dz)**2;
+    if(d<best){best=d;mm=m1+t*(m2-m1);}
+  }
+  return best>4000?null:mm;
+}
+async function fetchMRMS(layer){
+  const S=11,delta=0.04,bbox=`${LON-delta},${LAT-delta},${LON+delta},${LAT+delta}`;
+  const p=new URLSearchParams({SERVICE:'WMS',VERSION:'1.1.1',REQUEST:'GetMap',
+    LAYERS:layer,STYLES:'',BBOX:bbox,WIDTH:S,HEIGHT:S,FORMAT:'image/png',TRANSPARENT:'TRUE',SRS:'EPSG:4326'});
+  return new Promise(res=>{
+    const img=new Image();img.crossOrigin='anonymous';
+    img.onload=()=>{
+      try{
+        const c=document.createElement('canvas');c.width=S;c.height=S;
+        const ctx=c.getContext('2d');
+        ctx.fillStyle='#010101';ctx.fillRect(0,0,S,S);ctx.drawImage(img,0,0);
+        const m=Math.floor(S/2);
+        const[r,g,b]=ctx.getImageData(m,m,1,1).data;
+        if(r<=3&&g<=3&&b<=3){res(0);return;}
+        const mm=px2mm(r,g,b);
+        res(mm===null?0:mm/25.4);
+      }catch{res(0);}
+    };
+    img.onerror=()=>res(0);
+    img.src=`${WMS_MRMS}?${p}`;
   });
-  const res = await fetch(`${FDOT}?${params}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${county}`);
-  const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
-
-  return (json.features || [])
-    .map(f => f.attributes)
-    .filter(a =>
-      a.OFFICER_LATITUDE && a.OFFICER_LONGITUDE &&
-      a.OFFICER_LATITUDE > 27.5 && a.OFFICER_LATITUDE < 29 &&
-      a.OFFICER_LONGITUDE > -83 && a.OFFICER_LONGITUDE < -81.5
-    )
-    .map(a => {
-      const d = a.CRASH_DATE ? new Date(a.CRASH_DATE) : null;
-      return {
-        lat: a.OFFICER_LATITUDE,
-        lng: a.OFFICER_LONGITUDE,
-        road: (a.ON_ROADWAY_NAME || 'UNKNOWN').trim(),
-        cross: (a.INT_ROADWAY_NAME || '').trim(),
-        killed: a.NUMBER_OF_KILLED || 0,
-        injured: a.NUMBER_OF_INJURED || 0,
-        date: d ? d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—',
-        year: d ? d.getFullYear() : null,
-        day: a.WEEKDAY_TXT || '',
-        sev: (a.NUMBER_OF_KILLED > 0) ? 'fatal' : (a.NUMBER_OF_INJURED > 0) ? 'injury' : 'pd'
-      };
-    });
+}
+async function fetchWPC(layerNum){
+  const delta=0.1;
+  const p=new URLSearchParams({SERVICE:'WMS',VERSION:'1.3.0',REQUEST:'GetFeatureInfo',
+    LAYERS:String(layerNum),QUERY_LAYERS:String(layerNum),
+    INFO_FORMAT:'application/geo+json',FEATURE_COUNT:'1',CRS:'CRS:84',
+    BBOX:`${LON-delta},${LAT-delta},${LON+delta},${LAT+delta}`,
+    WIDTH:101,HEIGHT:101,I:51,J:51,FORMAT:'image/png'});
+  try{
+    const r=await fetch(`${WMS_WPC}?${p}`);
+    if(!r.ok)return 0;
+    const j=await r.json();
+    if(!j.features?.length)return 0;
+    const v=j.features[0].properties;
+    return parseFloat(v.qpf??v.QPF??v.Qpf??0)||0;
+  }catch{return 0;}
+}
+async function fetchUV(){
+  const u=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
+    +`&daily=uv_index_max&timezone=America%2FNew_York&forecast_days=10`;
+  return(await fetch(u)).json();
 }
 
-// ── VISIBLE SUBSET ─────────────────────────────────────────
-function vis() {
-  return allCrashes.filter(c =>
-    filters[c.sev] &&
-    (activeYear === 'all' || c.year === activeYear)
-  );
+// ── CHEMISTRY ─────────────────────────────────────────────
+// Total UV index-hours over 7 days starting daysAhead from today
+function uvSum7(daysAhead){
+  if(!uvData)return 560;
+  let s=0;
+  for(let i=daysAhead;i<daysAhead+7;i++){
+    const idx=Math.min(i,uvData.daily.uv_index_max.length-1);
+    s+=(uvData.daily.uv_index_max[idx]??8)*10;
+  }
+  return s;
 }
 
-function col(sev) {
-  return sev==='fatal' ? '#ff2020' : sev==='injury' ? '#ff8c00' : '#3b82f6';
+// THE CORE QUESTION:
+// "What FC do I dose to today so the pool is still at FLOOR next visit?"
+//
+// Simple: doseTarget = floor + net degradation over 7 days
+//   netDeg = uvLoss + rainLoss - tabGain
+//   doseTarget = floor + netDeg
+//
+function calcDoseTarget(uvSum, fcastRainIn, tabOn){
+  const floor=fcFloor();
+  const uvLoss=uvSum*UV_DECAY;
+  const rainLoss=fcastRainIn>0
+    ?floor*(1-(POOL_GAL/(POOL_GAL+fcastRainIn*RAIN_GAL_IN)))
+    :0;
+  const tabGain=tabOn?TAB_PPM_WEEK:0;
+  const netDeg=Math.max(0,uvLoss+rainLoss-tabGain);
+  const target=floor+netDeg;
+  return{
+    target:Math.round(Math.min(FC_SHOCK-1,target)*10)/10,
+    uvLoss:Math.round(uvLoss*10)/10,
+    rainLoss:Math.round(rainLoss*10)/10,
+    netDeg:Math.round(netDeg*10)/10,
+    floor,
+    tabGain
+  };
+}
+
+// Project FC day-by-day from a starting point
+function projectFC(startFC, daysAhead, tabOn){
+  const days=[];
+  let fc=startFC;
+  const todayDOW=new Date().getDay();
+  const startDOW=(todayDOW+daysAhead)%7;
+  const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dailyTabGain=tabOn?(TAB_PPM_WEEK/7):0;
+  const dailyRain=(rain.fcast7d??0)/7;
+  for(let i=0;i<7;i++){
+    if(i>0){
+      const idx=Math.min(daysAhead+i,(uvData?.daily.uv_index_max.length??0)-1);
+      const uvi=(uvData?.daily.uv_index_max[idx]??8)*10;
+      fc-=uvi*UV_DECAY;
+      fc+=dailyTabGain;
+      if(dailyRain>0) fc=fc*(POOL_GAL/(POOL_GAL+dailyRain*RAIN_GAL_IN));
+      fc=Math.max(0,fc);
+    }
+    const uvI=uvData?.daily.uv_index_max[Math.min(daysAhead+i,(uvData?.daily.uv_index_max.length??0)-1)]??8;
+    const dow=(startDOW+i)%7;
+    days.push({n:dn[dow].slice(0,3),fc:Math.round(fc*10)/10,uv:uvI,isLast:i===6});
+  }
+  return days;
+}
+
+function calcHypo(fcNow,target){
+  return Math.round(Math.max(0,target-fcNow)*HYPO_OZ_PER_PPM*10)/10;
+}
+function calcTabs(deficit){
+  if(deficit<=0)return'0';
+  if(deficit<3)return'½';
+  return'1';
+}
+function saltDrop(obsIn){return Math.round((obsIn*RAIN_GAL_IN/POOL_GAL)*SALT_IDEAL);}
+function uvClass(uv){return uv>=8?'high':uv>=5?'mod':'low';}
+function fcCol(fc,floor){return fc<floor*0.7?'var(--red)':fc<floor?'var(--yellow)':'var(--green)';}
+function barColor(target){
+  // gradient reflects where in the 0-20 range the target sits
+  const pct=Math.min(100,(target/FC_SHOCK)*100);
+  if(pct<35)return'var(--red)';
+  if(pct<55)return'var(--yellow)';
+  if(pct<75)return'var(--green)';
+  return'var(--blue)';
 }
 
 // ── RENDER ─────────────────────────────────────────────────
-function render() {
-  if (hLayer) { map.removeLayer(hLayer); hLayer = null; }
-  if (dLayer) { map.removeLayer(dLayer); dLayer = null; }
-  const v = vis();
-  if (!v.length) return;
+function renderDay(dayIdx){
+  const ds=loadDS(dayIdx);
+  const fcReading=ds.fc!==undefined?ds.fc:FC_DEFAULT;
 
-  if (curView === 'heat') {
-    const pts = v.map(c => [
-      c.lat, c.lng,
-      c.sev==='fatal' ? 1.0 : c.sev==='injury' ? 0.55 : 0.18
-    ]);
-    hLayer = L.heatLayer(pts, {
-      radius: 20, blur: 26, maxZoom: 17,
-      gradient: { 0.1:'#1e3a8a', 0.35:'#ff8c00', 0.7:'#ff3c3c', 1.0:'#ff0000' }
-    }).addTo(map);
-  } else {
-    dLayer = L.layerGroup();
-    v.forEach(c => {
-      const r = c.sev==='fatal' ? 7 : c.sev==='injury' ? 5 : 3.5;
-      L.circleMarker([c.lat, c.lng], {
-        radius: r,
-        fillColor: col(c.sev),
-        color: '#000',
-        weight: 0.5,
-        fillOpacity: c.sev==='fatal' ? 0.95 : 0.72
-      }).bindPopup(`
-        <div class="pr">${c.road}</div>
-        <div class="prow"><span class="pk">AT</span><span class="pv">${c.cross||'—'}</span></div>
-        <div class="prow"><span class="pk">DATE</span><span class="pv">${c.date}</span></div>
-        <div class="prow"><span class="pk">DAY</span><span class="pv">${c.day||'—'}</span></div>
-        <div class="prow"><span class="pk">KILLED</span><span class="pv" style="color:${c.killed>0?'var(--fatal)':'inherit'}">${c.killed}</span></div>
-        <div class="prow"><span class="pk">INJURED</span><span class="pv" style="color:${c.injured>0?'var(--accent2)':'inherit'}">${c.injured}</span></div>
-      `).addTo(dLayer);
-    });
-    dLayer.addTo(map);
-  }
-}
+  const todayDOW=new Date().getDay();
+  const targetDOW=dayIdx+1;
+  const daysAhead=(targetDOW-todayDOW+7)%7;
+  const name=['Monday','Tuesday','Wednesday','Thursday','Friday'][dayIdx];
+  const lbl=daysAhead===0?name+' — Today':name;
 
-function updateStats() {
-  const v = vis();
-  document.getElementById('st').textContent = v.length.toLocaleString();
-  document.getElementById('sf').textContent = v.filter(c=>c.killed>0).length.toLocaleString();
-  document.getElementById('si').textContent = v.reduce((s,c)=>s+c.injured,0).toLocaleString();
-}
+  const uv7=uvSum7(daysAhead);
+  const fcastIn=rain.fcast7d??0;
+  const obsIn=rain.obs72h??0;
 
-function buildRoadList() {
-  const v = vis();
-  const cnt = {};
-  v.forEach(c => { cnt[c.road] = (cnt[c.road]||0)+1; });
-  const sorted = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,25);
-  document.getElementById('rlist').innerHTML = sorted.map(([r,n]) => `
-    <div class="ri" onclick="fly('${r.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
-      <span class="rn">${r}</span>
-      <span class="rc">${n}</span>
-    </div>`).join('');
-}
+  const tabOn=ds.tabOn!==false; // default true
+  const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,tabOn);
+  const deficit=Math.max(0,target-fcReading);
+  const hypoOz=calcHypo(fcReading,target);
+  const tabTxt=calcTabs(deficit);
+  const hypoTxt=hypoOz<=0?'None needed':`${hypoOz} oz`;
 
-function buildYearFilter() {
-  const years = [...new Set(allCrashes.map(c=>c.year).filter(Boolean))].sort((a,b)=>b-a);
-  const yf = document.getElementById('yfilter');
-  years.forEach(y => {
-    const btn = document.createElement('button');
-    btn.className = 'ybtn';
-    btn.dataset.year = y;
-    btn.textContent = y;
-    btn.onclick = () => setYear(y, btn);
-    yf.appendChild(btn);
+  // Projected end-of-week FC if dosed to target
+  const outlook=projectFC(target,daysAhead,tabOn);
+  const endFC=outlook[6].fc;
+
+  // Salt
+  const drop=saltDrop(obsIn);
+  const saltLevel=Math.max(0,SALT_IDEAL-drop);
+  const saltNeeded=saltLevel<SALT_MIN?SALT_IDEAL-saltLevel:0;
+  const bagsPerPool=saltNeeded>0?Math.ceil((saltNeeded/SALT_BAG_PPM)*10)/10:0;
+  const bagsTotal=bagsPerPool>0?Math.ceil(bagsPerPool*SALT_POOLS):0;
+
+  // Outlook HTML
+  let outH='';
+  outlook.forEach((o,i)=>{
+    const isLast=i===6;
+    outH+=`<div class="wd${isLast?' is-floor':''}">
+      <div class="wd-n">${o.n}</div>
+      <div class="wd-fc" style="color:${fcCol(o.fc,floor)}">${o.fc}</div>
+      <div class="wd-uv ${uvClass(o.uv)}">${o.uv}</div>
+    </div>`;
   });
+
+  // FC input color
+  const inputCol=fcReading<floor*0.7?'var(--red)':fcReading<floor?'var(--yellow)':'var(--green)';
+
+  // Season label
+  const seasonFloor=`${floor} ppm floor (${floor===7?'Mar–Oct':'Nov–Feb'})`;
+
+  // Bar: show current FC position and target
+  const targetPct=Math.min(100,(target/FC_SHOCK)*100);
+  const nowPct=Math.min(100,(fcReading/FC_SHOCK)*100);
+
+  document.getElementById('content').innerHTML=`
+    <div class="day-label">${lbl}</div>
+
+    <!-- FC READING -->
+    <div class="fc-input-card">
+      <div class="fc-lbl">Today's FC reading — route spot-check (ppm)</div>
+      <div class="fc-row">
+        <input class="fc-input" type="number" min="0" max="20" step="0.5"
+          value="${fcReading}"
+          style="color:${inputCol};border-color:${inputCol};"
+          oninput="onFC(${dayIdx},this.value)"/>
+        <div class="fc-hints">
+          <div class="fc-hint" style="color:var(--red);">Below ${floor} = too low</div>
+          <div class="fc-hint" style="color:var(--yellow);">${floor}–${floor+1} = low</div>
+          <div class="fc-hint" style="color:var(--green);">${floor}–8 = ideal</div>
+          <div class="fc-hint" style="color:var(--muted);margin-top:3px;">${seasonFloor}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOSE TARGET -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">Dose All Pools To</div>
+        <span class="cbadge bg">≥${floor} PPM NEXT VISIT</span>
+      </div>
+      <div class="target-block">
+
+        <!-- Hero number -->
+        <div class="target-hero">
+          <div>
+            <div class="target-num">${target}<span class="target-unit">PPM</span></div>
+            <div class="target-sub">Start today → arrives at ${floor}+ ppm next week</div>
+          </div>
+          <div class="target-math">
+            Floor next visit: <span class="floor">${floor} ppm</span><br>
+            + UV decay: <span>+${uvLoss} ppm</span><br>
+            + Rain loss: <span>+${rainLoss} ppm</span><br>
+            − Tab gain: <span>−${tabGain} ppm</span><br>
+            = Dose to: <span class="floor">${target} ppm</span>
+          </div>
+        </div>
+
+        <!-- Now → Target -->
+        <div class="arrow-row">
+          <div class="arrow-label">Now</div>
+          <div class="arrow-fc" style="color:${inputCol}">${fcReading}</div>
+          <div class="arrow-sep">→</div>
+          <div class="arrow-target">${target}</div>
+          <div class="arrow-label" style="margin-left:2px;">target</div>
+          <div class="arrow-add" style="margin-left:auto;">
+            +<span>${Math.round(Math.max(0,target-fcReading)*10)/10} ppm needed</span>
+          </div>
+        </div>
+
+        <!-- Bar: shows target position on 0-20 scale -->
+        <div class="bar" style="position:relative;">
+          <div class="bar-fill" style="width:${targetPct}%;background:linear-gradient(90deg,var(--red),var(--yellow) 35%,var(--green) 55%,var(--blue));"></div>
+        </div>
+        <div class="bar-lbls" style="margin-bottom:10px;">
+          <span>0</span><span>Floor ${floor}</span><span>10</span><span>Shock ${FC_SHOCK}</span>
+        </div>
+
+        <!-- Dose method selector -->
+        <div style="border-top:1px solid var(--border);margin:0 -13px -13px;">
+          <!-- Method toggle row -->
+          <div style="display:flex;gap:1px;background:var(--border);">
+            ${['both','hypo','tab'].map(m=>`
+              <button onclick="setDoseMethod(${dayIdx},'${m}')"
+                style="flex:1;padding:6px 4px;font-family:'IBM Plex Mono',monospace;font-size:.52rem;
+                letter-spacing:.06em;cursor:pointer;border:none;transition:all .15s;
+                background:${(ds.doseMethod||'both')===m?'rgba(56,189,248,.12)':'var(--card)'};
+                color:${(ds.doseMethod||'both')===m?'var(--blue)':'var(--muted)'};">
+                ${{both:'BOTH',hypo:'HYPO ONLY',tab:'TAB ONLY'}[m]}
+                ${(ds.doseMethod||'both')===m?'✓':''}
+              </button>`).join('')}
+          </div>
+
+          <div class="dose-grid">
+            <!-- CAL HYPO CELL -->
+            <div class="dose-cell">
+              ${(ds.doseMethod||'both')!=='tab'?`
+                <div class="dose-num" style="color:${hypoOz>0?'var(--text)':'var(--muted)'}">
+                  ${hypoOz<=0?'None needed':`${hypoOz} oz`}
+                </div>
+                <div class="dose-unit">73% Cal Hypo</div>
+                <div class="dose-note">${hypoOz>0?`${fcReading} → ${target} ppm`:'At or above target'}</div>
+              `:`
+                <div class="dose-num" style="color:var(--muted)">—</div>
+                <div class="dose-unit">73% Cal Hypo</div>
+                <div class="dose-note" style="color:var(--muted)">Tab only mode</div>
+              `}
+            </div>
+
+            <!-- TAB CELL -->
+            <div class="dose-cell">
+              ${(ds.doseMethod||'both')!=='hypo'?`
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;">
+                  ${[0.5,1,1.5,2].map(n=>`
+                    <button onclick="setTabAmt(${dayIdx},${n})"
+                      style="font-family:'IBM Plex Mono',monospace;font-size:.54rem;padding:3px 7px;
+                      cursor:pointer;border-radius:0;transition:all .15s;
+                      background:${(ds.tabAmt||1)===n?'rgba(34,211,160,.12)':'rgba(255,255,255,.03)'};
+                      border:1px solid ${(ds.tabAmt||1)===n?'var(--green)':'var(--border)'};
+                      color:${(ds.tabAmt||1)===n?'var(--green)':'var(--muted)'};">
+                      ${n}
+                    </button>`).join('')}
+                </div>
+                <div class="dose-unit">3" Tabs</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                  <button onclick="toggleTab(${dayIdx})"
+                    style="font-family:'IBM Plex Mono',monospace;font-size:.48rem;letter-spacing:.06em;
+                    padding:2px 6px;cursor:pointer;border-radius:0;transition:all .15s;
+                    background:${tabOn?'rgba(34,211,160,.12)':'rgba(255,255,255,.04)'};
+                    border:1px solid ${tabOn?'var(--green)':'var(--border)'};
+                    color:${tabOn?'var(--green)':'var(--muted)'};">
+                    ${tabOn?'OFFSET ON':'OFFSET OFF'}
+                  </button>
+                  <span style="font-size:.46rem;color:var(--muted);">${tabOn?`−${tabGain} ppm`:'no offset'}</span>
+                </div>
+              `:`
+                <div class="dose-num" style="color:var(--muted)">—</div>
+                <div class="dose-unit">3" Tabs</div>
+                <div class="dose-note" style="color:var(--muted)">Hypo only mode</div>
+              `}
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="dose-meta">
+        72hr rain obs: <span style="color:var(--blue)">${fmtRain(obsIn)}</span> ·
+        7d fcst rain: <span style="color:var(--green)">${fmtRain(fcastIn)}</span> ·
+        Avg UV: <span>${Math.round(uv7/70)}</span>
+      </div>
+
+      <!-- 7-day FC survival -->
+      <div class="week-row">${outH}</div>
+    </div>
+
+    <!-- LOW FC POOLS -->
+    <div class="low-card">
+      <div class="low-hdr">
+        <div class="card-title" style="color:var(--orange);">If a Pool Tests Below ${floor} ppm</div>
+        <span class="cbadge bo">SHOCK PROTOCOL</span>
+      </div>
+      <div class="low-inner">
+        <div class="low-desc">Any pool already below ${floor} ppm needs shock treatment in addition to the standard dose.</div>
+        <div class="ldrow">
+          <span class="ldkey">73% Cal Hypo (per pool)</span>
+          <span class="ldval">${Math.round(FC_SHOCK*HYPO_OZ_PER_PPM*10)/10} oz</span>
+        </div>
+        <div class="ldrow">
+          <span class="ldkey">Target FC</span>
+          <span class="ldval">${FC_SHOCK} ppm</span>
+        </div>
+        <div class="ldrow">
+          <span class="ldkey">Tab</span>
+          <span class="ldval">1 tab</span>
+        </div>
+        <div class="bromide-block">
+          <div class="bromide-title">🧪 Green or cloudy water</div>
+          <div class="bromide-txt">Add sodium bromide before shocking. Brush walls and floor. Re-test in 24 hrs. Flag for follow-up if still green.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALT POOLS -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">Salt Pools</div>
+        <span class="cbadge bs">${SALT_POOLS} POOLS/DAY</span>
+      </div>
+      <div class="srow"><div class="skey">Est. salinity after rain</div>
+        <div class="sval ${saltLevel<SALT_MIN?'low':'ok'}">${saltLevel.toLocaleString()} ppm</div></div>
+      <div class="srow"><div class="skey">72hr observed rain</div>
+        <div class="sval" style="color:var(--blue)">${fmtRain(obsIn)}</div></div>
+      <div class="srow"><div class="skey">Salinity drop</div>
+        <div class="sval" style="color:var(--muted)">−${drop} ppm</div></div>
+      ${bagsTotal>0
+        ?`<div class="srow"><div class="skey">Per salt pool</div><div class="sval add">${bagsPerPool} bag${bagsPerPool!==1?'s':''}</div></div>
+           <div class="srow"><div class="skey">Total (${SALT_POOLS} pools)</div><div class="sval add">${bagsTotal} bags</div></div>`
+        :`<div class="srow"><div class="skey">Salt addition</div><div class="sval ok">None needed</div></div>`}
+    </div>
+  `;
 }
 
 // ── CONTROLS ───────────────────────────────────────────────
-function fly(road) {
-  const m = allCrashes.filter(c=>c.road===road);
-  if (!m.length) return;
-  map.fitBounds([
-    [Math.min(...m.map(c=>c.lat)), Math.min(...m.map(c=>c.lng))],
-    [Math.max(...m.map(c=>c.lat)), Math.max(...m.map(c=>c.lng))]
-  ], { padding:[50,50] });
+function setDoseMethod(dayIdx,method){
+  const ds=loadDS(dayIdx);
+  ds.doseMethod=method;
+  saveDS(dayIdx,ds);
+  renderDay(dayIdx);
 }
-
-function tog(type, btn) {
-  filters[type] = !filters[type];
-  const cls = type==='fatal'?'on-f':type==='injury'?'on-i':'on-p';
-  btn.classList.toggle(cls);
-  render(); updateStats(); buildRoadList();
+function setTabAmt(dayIdx,amt){
+  const ds=loadDS(dayIdx);
+  ds.tabAmt=amt;
+  saveDS(dayIdx,ds);
+  renderDay(dayIdx);
 }
-
-function setV(v, btn) {
-  curView = v;
-  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  render();
+function toggleTab(dayIdx){
+  const ds=loadDS(dayIdx);
+  ds.tabOn=ds.tabOn===false?true:false; // flip
+  saveDS(dayIdx,ds);
+  renderDay(dayIdx);
+  updateDots();
 }
-
-function setYear(y, btn) {
-  activeYear = y === 'all' ? 'all' : parseInt(y);
-  document.querySelectorAll('.ybtn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  render(); updateStats(); buildRoadList();
+function onFC(dayIdx,val){
+  const v=parseFloat(val);
+  const ds=loadDS(dayIdx);
+  ds.fc=isNaN(v)?FC_DEFAULT:Math.max(0,Math.min(30,v));
+  saveDS(dayIdx,ds);
+  renderDay(dayIdx);
+  updateDots();
 }
-
-// ── INIT ───────────────────────────────────────────────────
-async function init() {
-  const ostat = document.getElementById('ostat');
-  const sb    = document.getElementById('sb');
-  const pp    = document.getElementById('pp');
-  const overlay = document.getElementById('overlay');
-
-  try {
-    ostat.textContent = 'Fetching Pasco County...';
-    const pasco = await fetchCounty('PASCO');
-
-    ostat.textContent = 'Fetching Hillsborough County...';
-    const hills = await fetchCounty('HILLSBOROUGH');
-
-    allCrashes = [...pasco, ...hills];
-
-    overlay.style.display = 'none';
-    buildYearFilter();
-    render();
-    updateStats();
-    buildRoadList();
-
-    pp.className = 'pulse ok';
-    sb.textContent = `${allCrashes.length.toLocaleString()} crashes · FDOT live`;
-
-  } catch(err) {
-    ostat.textContent = 'Failed: ' + err.message;
-    sb.textContent = 'Load failed';
-    pp.className = 'pulse err';
-    console.error('FDOT error:', err);
+function selDay(idx,btn){
+  activeDay=idx;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDay(idx);
+}
+function updateDots(){
+  const floor=fcFloor();
+  for(let i=0;i<5;i++){
+    const fc=loadDS(i).fc??FC_DEFAULT;
+    const el=document.getElementById('td'+i);
+    if(!el)continue;
+    el.className=fc<floor*0.7?'tab-dot td-r':fc<floor?'tab-dot td-y':'tab-dot td-g';
   }
 }
 
-// Service worker registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  });
+// ── INIT ───────────────────────────────────────────────────
+// Show enough decimals to always display at least 1 significant digit
+function fmtRain(inches){
+  if(inches===0) return '0.00"';
+  if(inches>=0.1) return inches.toFixed(2)+'"';
+  if(inches>=0.01) return inches.toFixed(2)+'"';
+  return inches.toFixed(3)+'"'; // e.g. 0.005 → "0.005"
+}
+
+async function init(){
+  // Season label
+  const floor=fcFloor();
+  document.getElementById('app-sub').textContent=
+    `Hunters Green · CYA 50 · ${floor} ppm floor (${floor===7?'Mar–Oct':'Nov–Feb'})`;
+
+  renderDay(activeDay);
+  updateDots();
+
+  const[r1h,r24h,r48h,r72h,uvRaw,r7d]=await Promise.all([
+    fetchMRMS('mrms_p1h').catch(()=>0),
+    fetchMRMS('mrms_p24h').catch(()=>0),
+    fetchMRMS('mrms_p48h').catch(()=>0),
+    fetchMRMS('mrms_p72h').catch(()=>0),
+    fetchUV().catch(()=>null),
+    fetchWPC(15).catch(()=>0),
+  ]);
+
+  rain.obs1h=r1h;rain.obs24h=r24h;rain.obs48h=r48h;rain.obs72h=r72h;rain.fcast7d=r7d;
+  uvData=uvRaw;
+
+  document.getElementById('r1h').textContent=fmtRain(r1h);
+  document.getElementById('r24h').textContent=fmtRain(r24h);
+  document.getElementById('r48h').textContent=fmtRain(r48h);
+  document.getElementById('r72h').textContent=fmtRain(r72h);
+  document.getElementById('r7d').textContent=fmtRain(r7d);
+  if(uvData) document.getElementById('hdr-uv').textContent=(uvData.daily.uv_index_max[0]??0).toFixed(1);
+  document.getElementById('data-src').textContent=
+    `MRMS/IEM observed · WPC QPF D1–7 · ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
+
+  renderDay(activeDay);
+  updateDots();
 }
 
 init();
