@@ -384,7 +384,7 @@ function renderDay(dayIdx){
   // Salt — drop based on 72h observed + 7d forecast rain combined
   const totalRainForSalt=obsIn+fcastIn;
   const drop=saltDrop(totalRainForSalt);
-  const bagsPerPool=drop>0?Math.ceil(drop/SALT_BAG_PPM):0;
+  const bagsPerPool=drop>=SALT_BAG_PPM?Math.ceil(drop/SALT_BAG_PPM):0;
   const bagsTotal=bagsPerPool>0?bagsPerPool*SALT_POOLS:0;
 
   // Outlook HTML
