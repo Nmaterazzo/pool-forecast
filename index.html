@@ -375,8 +375,6 @@ function renderDay(dayIdx){
   const afterTabDeficit=Math.max(0,deficit-tabPpm);
   const afterTabHypoOz=Math.round(afterTabDeficit*HYPO_OZ_PER_PPM*10)/10;
   const hypoOz=calcHypo(fcReading,target);
-  const deficit=Math.max(0,target-fcReading);
-  const afterTabDeficit=Math.max(0,deficit-tabPpm);
   const afterTabHypoOz=Math.round(afterTabDeficit*HYPO_OZ_PER_PPM*10)/10;
   const hypoOz=calcHypo(fcReading,target); // total hypo if no tabs
 
