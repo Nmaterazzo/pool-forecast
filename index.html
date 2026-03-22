@@ -180,7 +180,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────
 const POOL_GAL=10000, POOL_SQFT=450;
-const SALT_IDEAL=3200, SALT_MIN=2700, SALT_BAG_PPM=480, SALT_POOLS=4;
+const SALT_IDEAL=3200, SALT_MIN=2800, SALT_MAX=3400, SALT_BAG_PPM=400, SALT_POOLS=4;
 const UV_DECAY=0.01;         // ppm/UV-index-hour, CYA 50 stabilized
 const HYPO_OZ_PER_PPM=1.84; // 73% cal hypo oz per ppm per 10k gal (verified against pool math app)
 const TAB_PPM_WEEK=2.5;      // 3" tab contribution over 7 days in 10k gal (~2-3 ppm)
@@ -339,7 +339,7 @@ function calcTabs(deficit){
   if(deficit<3)return'½';
   return'1';
 }
-function saltDrop(obsIn){return Math.round((obsIn*RAIN_GAL_IN/POOL_GAL)*SALT_IDEAL);}
+function saltDrop(totalRainIn){return Math.round((totalRainIn*RAIN_GAL_IN/POOL_GAL)*SALT_IDEAL);}
 function uvClass(uv){return uv>=8?'high':uv>=5?'mod':'low';}
 function fcCol(fc,floor){return fc<floor*0.7?'var(--red)':fc<floor?'var(--yellow)':'var(--green)';}
 function barColor(target){
@@ -381,12 +381,13 @@ function renderDay(dayIdx){
   const outlook=projectFC(target,daysAhead,effectiveTabOn);
   const endFC=outlook[6].fc;
 
-  // Salt
-  const drop=saltDrop(obsIn);
+  // Salt — drop based on 72h observed + 7d forecast rain combined
+  const totalRainForSalt=obsIn+fcastIn;
+  const drop=saltDrop(totalRainForSalt);
   const saltLevel=Math.max(0,SALT_IDEAL-drop);
   const saltNeeded=saltLevel<SALT_MIN?SALT_IDEAL-saltLevel:0;
-  const bagsPerPool=saltNeeded>0?Math.ceil((saltNeeded/SALT_BAG_PPM)*10)/10:0;
-  const bagsTotal=bagsPerPool>0?Math.ceil(bagsPerPool*SALT_POOLS):0;
+  const bagsPerPool=saltNeeded>0?Math.ceil(saltNeeded/SALT_BAG_PPM):0;
+  const bagsTotal=bagsPerPool>0?bagsPerPool*SALT_POOLS:0;
 
   // Outlook HTML
   let outH='';
@@ -569,11 +570,15 @@ function renderDay(dayIdx){
         <div class="card-title">Salt Pools</div>
         <span class="cbadge bs">${SALT_POOLS} POOLS/DAY</span>
       </div>
+      <div class="srow"><div class="skey">Ideal salinity</div>
+        <div class="sval ok">3,000 – 3,400 ppm</div></div>
       <div class="srow"><div class="skey">Est. salinity after rain</div>
         <div class="sval ${saltLevel<SALT_MIN?'low':'ok'}">${saltLevel.toLocaleString()} ppm</div></div>
       <div class="srow"><div class="skey">72hr observed rain</div>
         <div class="sval" style="color:var(--blue)">${fmtRain(obsIn)}</div></div>
-      <div class="srow"><div class="skey">Salinity drop</div>
+      <div class="srow"><div class="skey">7d forecast rain</div>
+        <div class="sval" style="color:var(--green)">${fmtRain(fcastIn)}</div></div>
+      <div class="srow"><div class="skey">Total salinity drop</div>
         <div class="sval" style="color:var(--muted)">−${drop} ppm</div></div>
       ${bagsTotal>0
         ?`<div class="srow"><div class="skey">Per salt pool</div><div class="sval add">${bagsPerPool} bag${bagsPerPool!==1?'s':''}</div></div>
