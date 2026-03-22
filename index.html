@@ -403,7 +403,9 @@ function renderDay(dayIdx){
   const inputCol=fcReading<floor*0.7?'var(--red)':fcReading<floor?'var(--yellow)':'var(--green)';
 
   // Season label
-  const seasonFloor=`${floor} ppm floor (${floor===7?'Mar–Oct':'Nov–Feb'})`;
+  const seasonFloor=floor===7
+    ?`7 ppm floor (Mar–Oct) · 4 ppm floor (Nov–Feb)`
+    :`4 ppm floor (Nov–Feb) · 7 ppm floor (Mar–Oct)`;
 
   // Bar: show current FC position and target
   const targetPct=Math.min(100,(target/FC_SHOCK)*100);
@@ -421,9 +423,9 @@ function renderDay(dayIdx){
           style="color:${inputCol};border-color:${inputCol};"
           oninput="onFC(${dayIdx},this.value)"/>
         <div class="fc-hints">
-          <div class="fc-hint" style="color:var(--red);">Below ${floor} = too low</div>
-          <div class="fc-hint" style="color:var(--yellow);">${floor}–${floor+1} = low</div>
-          <div class="fc-hint" style="color:var(--green);">${floor}–8 = ideal</div>
+          <div class="fc-hint" style="color:var(--red);">Below 4 = too low</div>
+          <div class="fc-hint" style="color:var(--yellow);">4–6 = low</div>
+          <div class="fc-hint" style="color:var(--green);">7–8 = ideal</div>
           <div class="fc-hint" style="color:var(--muted);margin-top:3px;">${seasonFloor}</div>
         </div>
       </div>
@@ -537,7 +539,7 @@ function renderDay(dayIdx){
     <!-- LOW FC POOLS -->
     <div class="low-card">
       <div class="low-hdr">
-        <div class="card-title" style="color:var(--orange);">If a Pool Tests Below ${floor} ppm</div>
+        <div class="card-title" style="color:var(--orange);">If a Pool Has 0 Chlorine or Has Algae</div>
         <span class="cbadge bo">SHOCK PROTOCOL</span>
       </div>
       <div class="low-inner">
