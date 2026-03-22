@@ -289,7 +289,7 @@ function uvSum7(daysAhead){
 //
 function calcDoseTarget(uvSum, fcastRainIn, tabOn){
   const floor=fcFloor();
-  const uvLoss=uvSum*UV_DECAY;
+  const uvLoss=Math.round((uvSum*UV_DECAY+0.05)*10)/10; // round up at .5
   const rainLoss=fcastRainIn>0
     ?floor*(1-(POOL_GAL/(POOL_GAL+fcastRainIn*RAIN_GAL_IN)))
     :0;
@@ -541,7 +541,7 @@ function renderDay(dayIdx){
         <span class="cbadge bo">SHOCK PROTOCOL</span>
       </div>
       <div class="low-inner">
-        <div class="low-desc">Any pool already below ${floor} ppm needs shock treatment in addition to the standard dose.</div>
+        <div class="low-desc">Any pool with 0–2 ppm or visible algae needs shock treatment in addition to the standard dose.</div>
         <div class="ldrow">
           <span class="ldkey">73% Cal Hypo (per pool)</span>
           <span class="ldval">${Math.round(FC_SHOCK*HYPO_OZ_PER_PPM*10)/10} oz</span>
