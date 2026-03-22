@@ -384,9 +384,7 @@ function renderDay(dayIdx){
   // Salt — drop based on 72h observed + 7d forecast rain combined
   const totalRainForSalt=obsIn+fcastIn;
   const drop=saltDrop(totalRainForSalt);
-  const saltLevel=Math.max(0,SALT_IDEAL-drop);
-  const saltNeeded=saltLevel<SALT_MIN?SALT_IDEAL-saltLevel:0;
-  const bagsPerPool=saltNeeded>0?Math.ceil(saltNeeded/SALT_BAG_PPM):0;
+  const bagsPerPool=drop>0?Math.ceil(drop/SALT_BAG_PPM):0;
   const bagsTotal=bagsPerPool>0?bagsPerPool*SALT_POOLS:0;
 
   // Outlook HTML
@@ -572,14 +570,12 @@ function renderDay(dayIdx){
       </div>
       <div class="srow"><div class="skey">Ideal salinity</div>
         <div class="sval ok">3,000 – 3,400 ppm</div></div>
-      <div class="srow"><div class="skey">Est. salinity after rain</div>
-        <div class="sval ${saltLevel<SALT_MIN?'low':'ok'}">${saltLevel.toLocaleString()} ppm</div></div>
+      <div class="srow"><div class="skey">Est. salinity drop after rain</div>
+        <div class="sval ${drop>=400?'low':'ok'}">−${drop} ppm</div></div>
       <div class="srow"><div class="skey">72hr observed rain</div>
         <div class="sval" style="color:var(--blue)">${fmtRain(obsIn)}</div></div>
       <div class="srow"><div class="skey">7d forecast rain</div>
         <div class="sval" style="color:var(--green)">${fmtRain(fcastIn)}</div></div>
-      <div class="srow"><div class="skey">Total salinity drop</div>
-        <div class="sval" style="color:var(--muted)">−${drop} ppm</div></div>
       ${bagsTotal>0
         ?`<div class="srow"><div class="skey">Per salt pool</div><div class="sval add">${bagsPerPool} bag${bagsPerPool!==1?'s':''}</div></div>
            <div class="srow"><div class="skey">Total (${SALT_POOLS} pools)</div><div class="sval add">${bagsTotal} bags</div></div>`
