@@ -152,9 +152,17 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
       <div class="app-title">POOL FORECAST</div>
       <div class="app-sub" id="app-sub">Hunters Green · CYA 50ppm · 10k gal</div>
     </div>
-    <div class="uv-box">
-      <div class="uv-val" id="hdr-uv">—</div>
-      <div class="uv-lbl">UV Index</div>
+    <div style="display:flex;gap:14px;align-items:flex-start;">
+      <div class="uv-box">
+        <div class="uv-val" id="hdr-uv">—</div>
+        <div class="uv-lbl">UV Today</div>
+        <div style="font-size:.44rem;color:var(--muted);margin-top:1px;">Peak: <span id="hdr-uv-peak" style="color:var(--yellow);">—</span></div>
+      </div>
+      <div class="uv-box">
+        <div class="uv-val" id="hdr-wtemp" style="color:var(--green);">—</div>
+        <div class="uv-lbl">Pool Temp</div>
+        <div style="font-size:.44rem;color:var(--muted);margin-top:1px;">Floor: <span id="hdr-floor" style="color:var(--green);">—</span></div>
+      </div>
     </div>
   </div>
   <div class="rain-row">
@@ -180,7 +188,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 <script>
 // ── CONSTANTS ──────────────────────────────────────────────
 const POOL_GAL=10000, POOL_SQFT=450;
-const SALT_IDEAL=3200, SALT_MIN=2800, SALT_MAX=3400, SALT_BAG_PPM=400, SALT_POOLS=4;
+const SALT_IDEAL=3200, SALT_MIN=2800, SALT_MAX=3400, SALT_BAG_PPM=200, SALT_POOLS=4;
 const UV_DECAY=0.01;         // ppm/UV-index-hour, CYA 50 stabilized
 const HYPO_OZ_PER_PPM=1.84; // 73% cal hypo oz per ppm per 10k gal (verified against pool math app)
 const TAB_PPM_WEEK=2.5;      // 3" tab contribution over 7 days in 10k gal (~2-3 ppm)
@@ -188,10 +196,25 @@ const RAIN_GAL_IN=POOL_SQFT*0.623;
 const FC_DEFAULT=7;
 const FC_SHOCK=20;
 
-// Season-aware floor
-function fcFloor(){
-  const m=new Date().getMonth()+1; // 1-12
-  return(m>=3&&m<=10)?7:4; // Mar-Oct = 7, Nov-Feb = 4
+// Water temp from Open-Meteo soil temp (good pool water proxy), in °F
+// Falls back to seasonal estimate if not loaded yet
+function waterTempF(daysAhead){
+  if(uvData?.daily?.soil_temperature_0_to_7cm_mean){
+    const idx=Math.min(daysAhead, uvData.daily.soil_temperature_0_to_7cm_mean.length-1);
+    const t=uvData.daily.soil_temperature_0_to_7cm_mean[idx];
+    if(t!=null) return Math.round(t*10)/10;
+  }
+  // Fallback: rough Florida seasonal estimate
+  const m=new Date().getMonth()+1;
+  return m>=5&&m<=9?85:m>=3&&m<=4||m>=10&&m<=11?74:64;
+}
+
+// FC floor based on water temp:
+// Linear scale anchored at 54°F→5ppm, 70°F→7ppm, 80°F→8ppm
+// Slope: (8-5)/(80-54) = 3/26 ≈ 0.115 ppm per °F
+function fcFloorFromTemp(tempF){
+  const floor=5+(tempF-54)*(3/26);
+  return Math.round(Math.max(4,Math.min(10,floor))*2)/2; // round to nearest 0.5, cap 4-10
 }
 
 const LAT=28.131, LON=-82.352;
@@ -264,7 +287,7 @@ async function fetchWPC(layerNum){
 }
 async function fetchUV(){
   const u=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
-    +`&daily=uv_index_max&timezone=America%2FNew_York&forecast_days=10`;
+    +`&daily=uv_index_max,soil_temperature_0_to_7cm_mean&timezone=America%2FNew_York&forecast_days=10&temperature_unit=fahrenheit`;
   return(await fetch(u)).json();
 }
 
@@ -287,8 +310,8 @@ function uvSum7(daysAhead){
 //   netDeg = uvLoss + rainLoss - tabGain
 //   doseTarget = floor + netDeg
 //
-function calcDoseTarget(uvSum, fcastRainIn, tabOn){
-  const floor=fcFloor();
+function calcDoseTarget(uvSum, fcastRainIn, tabOn, tempF){
+  const floor=fcFloorFromTemp(tempF??75);
   const uvLoss=Math.round((uvSum*UV_DECAY+0.05)*10)/10; // round up at .5
   const rainLoss=fcastRainIn>0
     ?floor*(1-(POOL_GAL/(POOL_GAL+fcastRainIn*RAIN_GAL_IN)))
@@ -302,7 +325,8 @@ function calcDoseTarget(uvSum, fcastRainIn, tabOn){
     rainLoss:Math.round(rainLoss*10)/10,
     netDeg:Math.round(netDeg*10)/10,
     floor,
-    tabGain
+    tabGain,
+    tempF:tempF??75
   };
 }
 
@@ -367,10 +391,11 @@ function renderDay(dayIdx){
   const obsIn=rain.obs72h??0;
 
   const tabOn=ds.tabOn!==false;
+  const wTemp=waterTempF(daysAhead);
   const recTab=(uv7*UV_DECAY)>=3?1:0;
   const tabAmt=ds.tabAmt??recTab;
   const effectiveTabOn=tabOn&&tabAmt>0;
-  const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,effectiveTabOn);
+  const{target,uvLoss,rainLoss,netDeg,floor,tabGain,tempF}=calcDoseTarget(uv7,fcastIn,effectiveTabOn,wTemp);
   const tabPpm=tabAmt>0?Math.round(tabAmt*2.5*10)/10:0;
   const fullDeficit=Math.max(0,target-fcReading);
   // Only reduce hypo by tab contribution if offset is on — otherwise hypo covers full deficit
@@ -384,7 +409,7 @@ function renderDay(dayIdx){
   // Salt — drop based on 72h observed + 7d forecast rain combined
   const totalRainForSalt=obsIn+fcastIn;
   const drop=saltDrop(totalRainForSalt);
-  const bagsPerPool=drop>=SALT_BAG_PPM?Math.ceil(drop/SALT_BAG_PPM):0;
+  const bagsPerPool=drop>=SALT_BAG_PPM?Math.floor(drop/SALT_BAG_PPM):0;
   const bagsTotal=bagsPerPool>0?bagsPerPool*SALT_POOLS:0;
 
   // Outlook HTML
@@ -402,9 +427,7 @@ function renderDay(dayIdx){
   const inputCol=fcReading<floor*0.7?'var(--red)':fcReading<floor?'var(--yellow)':'var(--green)';
 
   // Season label
-  const seasonFloor=floor===7
-    ?`7 ppm floor (Mar–Oct) · 4 ppm floor (Nov–Feb)`
-    :`4 ppm floor (Nov–Feb) · 7 ppm floor (Mar–Oct)`;
+  const seasonFloor=`${floor} ppm floor · water ~${wTemp}°F`;
 
   // Bar: show current FC position and target
   const targetPct=Math.min(100,(target/FC_SHOCK)*100);
@@ -445,6 +468,7 @@ function renderDay(dayIdx){
             <div class="target-sub">Start today → arrives at ${floor}+ ppm next week</div>
           </div>
           <div class="target-math">
+            Water temp: <span>${wTemp}°F</span><br>
             Floor next visit: <span class="floor">${floor} ppm</span><br>
             + UV decay: <span>+${uvLoss} ppm</span><br>
             + Rain loss: <span>+${rainLoss} ppm</span><br>
@@ -613,12 +637,12 @@ function selDay(idx,btn){
   renderDay(idx);
 }
 function updateDots(){
-  const floor=fcFloor();
+  const floor=fcFloorFromTemp(waterTempF(0));
   for(let i=0;i<5;i++){
     const fc=loadDS(i).fc??FC_DEFAULT;
     const el=document.getElementById('td'+i);
     if(!el)continue;
-    el.className=fc<floor*0.7?'tab-dot td-r':fc<floor?'tab-dot td-y':'tab-dot td-g';
+    el.className=fc<4?'tab-dot td-r':fc<floor?'tab-dot td-y':'tab-dot td-g';
   }
 }
 
@@ -628,15 +652,10 @@ function fmtRain(inches){
   if(inches===0) return '0.00"';
   if(inches>=0.1) return inches.toFixed(2)+'"';
   if(inches>=0.01) return inches.toFixed(2)+'"';
-  return inches.toFixed(3)+'"'; // e.g. 0.005 → "0.005"
+  return inches.toFixed(3)+'"';
 }
 
 async function init(){
-  // Season label
-  const floor=fcFloor();
-  document.getElementById('app-sub').textContent=
-    `Hunters Green · CYA 50 · ${floor} ppm floor (${floor===7?'Mar–Oct':'Nov–Feb'})`;
-
   renderDay(activeDay);
   updateDots();
 
@@ -657,7 +676,19 @@ async function init(){
   document.getElementById('r48h').textContent=fmtRain(r48h);
   document.getElementById('r72h').textContent=fmtRain(r72h);
   document.getElementById('r7d').textContent=fmtRain(r7d);
-  if(uvData) document.getElementById('hdr-uv').textContent=(uvData.daily.uv_index_max[0]??0).toFixed(1);
+  if(uvData){
+    const todayUV=uvData.daily.uv_index_max[0]??0;
+    const weekUVs=uvData.daily.uv_index_max.slice(0,7).filter(v=>v!=null);
+    const peakUV=Math.max(...weekUVs);
+    document.getElementById('hdr-uv').textContent=todayUV.toFixed(1);
+    document.getElementById('hdr-uv-peak').textContent=peakUV.toFixed(1);
+    const wt=waterTempF(0);
+    const fl=fcFloorFromTemp(wt);
+    document.getElementById('hdr-wtemp').textContent=wt+'°F';
+    document.getElementById('hdr-floor').textContent=fl+' ppm';
+    document.getElementById('app-sub').textContent=
+      `Hunters Green · CYA 50 · Water ~${wt}°F · ${fl} ppm floor`;
+  }
   document.getElementById('data-src').textContent=
     `MRMS/IEM observed · WPC QPF D1–7 · ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
 
