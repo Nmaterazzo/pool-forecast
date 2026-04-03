@@ -141,6 +141,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
   background:rgba(56,189,248,.1);color:var(--blue);border:1px solid rgba(56,189,248,.2);}
 .et-badge.warn{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.2);}
 .et-badge.hot{background:rgba(251,146,60,.1);color:var(--orange);border:1px solid rgba(251,146,60,.2);}
+.et-badge.cached{background:rgba(74,96,128,.1);color:var(--muted);border:1px solid rgba(74,96,128,.2);}
 .et-hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
 .et-metric{background:var(--card);padding:11px 12px;}
 .et-metric-num{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;line-height:1;color:var(--blue);}
@@ -163,8 +164,8 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .et-bar-wrap{width:100%;display:flex;align-items:flex-end;justify-content:center;height:68px;}
 .et-bar{width:100%;border-radius:1px 1px 0 0;transition:height .4s ease;min-height:2px;}
 .et-bar.today{background:var(--blue);}
-.et-bar.hist{background:var(--muted);opacity:.6;}
-.et-bar.est{background:var(--yellow);opacity:.5;}
+.et-bar.hist{background:var(--green);opacity:.7;}
+.et-bar.est{background:var(--yellow);opacity:.45;}
 .et-bar-lbl{font-size:.4rem;color:var(--muted);text-align:center;white-space:nowrap;padding-top:3px;}
 .et-bar-val{font-size:.42rem;color:var(--text);text-align:center;font-weight:500;padding-bottom:2px;}
 .et-chart-legend{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;}
@@ -181,6 +182,13 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .et-status{padding:9px 13px;font-size:.5rem;color:var(--muted);border-top:1px solid var(--border);line-height:1.7;}
 .et-status span{color:var(--text);}
 .et-status .err{color:var(--red);}
+.et-status .cached{color:var(--muted);}
+.et-refresh-btn{
+  font-family:'IBM Plex Mono',monospace;font-size:.44rem;letter-spacing:.06em;
+  padding:2px 7px;cursor:pointer;border-radius:0;transition:all .15s;
+  background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);color:var(--blue);
+  margin-left:8px;vertical-align:middle;}
+.et-refresh-btn:hover{background:rgba(56,189,248,.18);}
 
 .spin{display:inline-block;width:9px;height:9px;border:1.5px solid var(--border);
   border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;}
@@ -229,7 +237,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 <div class="content" id="content"></div>
 
 <!-- ══════════════════════════════════════════════════════════
-     EVAPORATION CARD — bottom of page, outside daily content
+     EVAPORATION CARD
      ══════════════════════════════════════════════════════════ -->
 <div style="padding:0 13px 13px;">
   <div class="et-card" id="et-card">
@@ -243,7 +251,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
       <div class="et-metric">
         <div class="et-metric-num" id="et-inches"><span class="spin"></span></div>
         <div class="et-metric-unit">in / day ET</div>
-        <div class="et-metric-sub">Penman-Monteith<br>from your station</div>
+        <div class="et-metric-sub">Penman-Monteith<br>288-pt daily average</div>
       </div>
       <div class="et-metric">
         <div class="et-metric-num" id="et-gal-std">—</div>
@@ -298,8 +306,8 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
       </div>
       <div class="et-chart-legend">
         <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--blue)"></div>Today (live)</div>
-        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--muted);opacity:.6"></div>Historical (logged)</div>
-        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--yellow);opacity:.7"></div>Estimated (no data)</div>
+        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--green);opacity:.7"></div>Historical (real data)</div>
+        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--yellow);opacity:.45"></div>Estimated (no data)</div>
       </div>
     </div>
 
@@ -447,7 +455,7 @@ function projectFC(startFC,daysAhead,tabOn){
   }
   return days;
 }
-function saltDrop(totalRainIn){return Math.round((totalRainIn*RAIN_GAL_IN/POOL_GAL)*SALT_IDEAL);}
+function saltDrop(r){return Math.round((r*RAIN_GAL_IN/POOL_GAL)*SALT_IDEAL);}
 function uvClass(uv){return uv>=8?'high':uv>=5?'mod':'low';}
 function fcCol(fc,floor){return fc<floor*0.7?'var(--red)':fc<floor?'var(--yellow)':'var(--green)';}
 function fmtRain(inches){
@@ -684,170 +692,347 @@ async function init(){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  EVAPORATION MODULE
+//  EVAPORATION MODULE — 288-record daily integration
 // ══════════════════════════════════════════════════════════════
+
 const ET_API_KEY = 'e69bc01ace6e448d9dc47471ee49520bd2d77c740fa44c5faaa64727f50515c1';
 const ET_APP_KEY = '6c3da7cd61eb4102a36fc7fba93b16694edeb3c17cb54bd49bb3e42f465e8a2c';
 const ET_MAC     = 'C8:C9:A3:0E:CB:E2';
+
+// How long before we consider cached data stale and re-fetch (ms)
+const ET_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
 const ET_SCREEN_FACTORS = {open:1.0, screen:0.35, cover:0.05};
 let etScreenMode = 'open';
 
-// Penman-Monteith — returns ETo mm/day
-// Tmean °C, RH %, u2 m/s, Rs MJ/m²/day, elev m
-function penmanMonteith(Tmean,RH,u2,Rs,elev=8){
-  const es    = 0.6108*Math.exp(17.27*Tmean/(Tmean+237.3));
-  const ea    = es*(RH/100);
-  const delta = 4098*es/Math.pow(Tmean+237.3,2);
-  const P     = 101.3*Math.pow((293-0.0065*elev)/293,5.26);
-  const gamma = 0.000665*P;
-  const Rns   = (1-0.23)*Rs;
-  const TK    = Tmean+273.16;
-  const Rnl   = 4.903e-9*Math.pow(TK,4)*(0.34-0.14*Math.sqrt(ea))*
-                (1.35*Math.min(Rs/(0.75*(Rs+0.1)),1)-0.35);
-  const Rn    = Rns-Rnl;
-  const num   = 0.408*delta*Rn+gamma*(900/(Tmean+273))*u2*(es-ea);
-  const den   = delta+gamma*(1+0.34*u2);
-  return Math.max(0,num/den);
+// ── PENMAN-MONTEITH ───────────────────────────────────────────
+// Returns ETo mm/day
+// Inputs: Tmean °C, RH mean %, u2 mean m/s, Rs MJ/m²/day, elev m
+function penmanMonteith(Tmean, RH, u2, Rs, elev=8){
+  const es    = 0.6108 * Math.exp(17.27 * Tmean / (Tmean + 237.3));
+  const ea    = es * (RH / 100);
+  const delta = 4098 * es / Math.pow(Tmean + 237.3, 2);
+  const P     = 101.3 * Math.pow((293 - 0.0065 * elev) / 293, 5.26);
+  const gamma = 0.000665 * P;
+  const Rns   = (1 - 0.23) * Rs;
+  const TK    = Tmean + 273.16;
+  const Rnl   = 4.903e-9 * Math.pow(TK, 4) * (0.34 - 0.14 * Math.sqrt(Math.max(0, ea))) *
+                (1.35 * Math.min(Rs / (0.75 * (Rs + 0.1)), 1) - 0.35);
+  const Rn    = Rns - Rnl;
+  const num   = 0.408 * delta * Rn + gamma * (900 / (Tmean + 273)) * u2 * (es - ea);
+  const den   = delta + gamma * (1 + 0.34 * u2);
+  return Math.max(0, num / den);
 }
-function mmToIn(mm){return mm/25.4;}
-function etToGal(etIn,sqft){return etIn*sqft*0.6233;}
+function mmToIn(mm){ return mm / 25.4; }
+function etToGal(etIn, sqft){ return etIn * sqft * 0.6233; }
 
-// ET log
-const ET_LOG_KEY='poolEtLog';
-function etLogGet(){try{return JSON.parse(localStorage.getItem(ET_LOG_KEY)||'{}');}catch{return{};}}
-function etLogSave(l){try{localStorage.setItem(ET_LOG_KEY,JSON.stringify(l));}catch{}}
-function etLogToday(etIn){
-  const log=etLogGet();
-  const key=new Date().toISOString().split('T')[0];
-  log[key]={et:etIn,ts:new Date().toISOString()};
-  const cutoff=new Date(Date.now()-30*864e5).toISOString().split('T')[0];
-  Object.keys(log).forEach(d=>{if(d<cutoff)delete log[d];});
+// ── ET LOG — localStorage ─────────────────────────────────────
+// Structure per day key (YYYY-MM-DD):
+// { et, rs, tmean, rh, wind, fetchedAt, recordCount, isPartialDay }
+const ET_LOG_KEY = 'poolEtLog_v2';
+
+function etLogGet(){
+  try{ return JSON.parse(localStorage.getItem(ET_LOG_KEY) || '{}'); }
+  catch{ return {}; }
+}
+function etLogSave(log){
+  try{ localStorage.setItem(ET_LOG_KEY, JSON.stringify(log)); }
+  catch(e){ console.warn('ET log save failed:', e); }
+}
+
+// Save a calculated day entry
+function etLogSaveDay(dateKey, entry){
+  const log = etLogGet();
+  log[dateKey] = entry;
+  // Prune anything older than 30 days
+  const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().split('T')[0];
+  Object.keys(log).forEach(d => { if(d < cutoff) delete log[d]; });
   etLogSave(log);
 }
+
+// Get today's cached entry — returns null if missing or stale
+function etLogGetToday(){
+  const log  = etLogGet();
+  const key  = new Date().toISOString().split('T')[0];
+  const entry = log[key];
+  if(!entry) return null;
+  // Check staleness — if fetchedAt is within TTL, return cached
+  const age = Date.now() - (entry.fetchedAt || 0);
+  if(age < ET_CACHE_TTL) return { ...entry, cached: true };
+  return null; // stale — needs refresh
+}
+
+// Get the full range for the chart (past N days)
 function etLogGetRange(days){
-  const log=etLogGet();const result=[];
-  for(let i=days-1;i>=0;i--){
-    const d=new Date(Date.now()-i*864e5);
-    const key=d.toISOString().split('T')[0];
-    const lbl=i===0?'Today':i===1?'Yest.':d.toLocaleDateString('en-US',{weekday:'short'});
-    result.push({key,lbl,et:log[key]?.et??null,isToday:i===0});
+  const log    = etLogGet();
+  const result = [];
+  for(let i = days - 1; i >= 0; i--){
+    const d   = new Date(Date.now() - i * 864e5);
+    const key = d.toISOString().split('T')[0];
+    const lbl = i === 0 ? 'Today'
+              : i === 1 ? 'Yest.'
+              : d.toLocaleDateString('en-US', {weekday:'short'});
+    result.push({ key, lbl, data: log[key] || null, isToday: i === 0 });
   }
   return result;
 }
 
+// ── PROCESS 288 RECORDS → DAILY ET ───────────────────────────
+// records: array of Ambient data objects (newest first from API)
+// We integrate solar radiation and average temp/RH/wind
+function processRecordsToET(records){
+  if(!records || records.length === 0) throw new Error('No records');
+
+  // Filter to records from today (local date)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayRecs = records.filter(r => {
+    if(!r.dateutc && !r.date) return true; // include if no date
+    const d = new Date(r.dateutc || r.date);
+    return d.toISOString().split('T')[0] === todayStr;
+  });
+
+  const recs = todayRecs.length > 0 ? todayRecs : records;
+
+  // Extract valid readings
+  const temps  = recs.map(r => r.tempf).filter(v => v != null && v > 0);
+  const rhs    = recs.map(r => r.humidity).filter(v => v != null && v > 0);
+  const winds  = recs.map(r => r.windspeedmph).filter(v => v != null && v >= 0);
+  const solars = recs.map(r => r.solarradiation).filter(v => v != null && v >= 0);
+
+  if(temps.length === 0) throw new Error('No temperature data in records');
+
+  const avg = arr => arr.reduce((a,b) => a + b, 0) / arr.length;
+
+  const Tmean_F = avg(temps);
+  const Tmean   = (Tmean_F - 32) * 5 / 9;             // → °C
+  const RH      = rhs.length > 0 ? avg(rhs) : 65;
+  // Wind: average mph → m/s, apply 50% forest shelter
+  const windMph = winds.length > 0 ? avg(winds) : 3;
+  const u2      = windMph * 0.44704 * 0.50;
+
+  // Solar: integrate W/m² readings → MJ/m²/day
+  // Each record represents a 5-min interval (288 records = 24hrs)
+  // Energy per interval = W/m² × 300 seconds / 1,000,000 = MJ per interval
+  // Sum all intervals for daily total Rs
+  let Rs = 0;
+  if(solars.length > 0){
+    // Interval duration in seconds — Ambient logs every ~5 min
+    const intervalSec = (24 * 3600) / Math.max(solars.length, 1);
+    Rs = solars.reduce((sum, w) => sum + (w * intervalSec / 1e6), 0);
+  } else {
+    // Fallback: use typical Tampa April Rs if no solar sensor
+    Rs = 18.0;
+  }
+
+  const etMm = penmanMonteith(Tmean, RH, u2, Rs, 8);
+  const etIn = mmToIn(etMm);
+
+  return {
+    et:          Math.round(etIn * 10000) / 10000,
+    rs:          Math.round(Rs * 100) / 100,
+    tmean:       Math.round(Tmean_F * 10) / 10,
+    rh:          Math.round(RH),
+    wind:        Math.round(windMph * 10) / 10,
+    recordCount: recs.length,
+    isPartialDay: recs.length < 200, // flag if we have less than ~70% of a full day
+    fetchedAt:   Date.now(),
+  };
+}
+
+// ── FETCH FROM AMBIENT ────────────────────────────────────────
+// Pull up to 288 records (last 24hrs at 5-min resolution)
+async function etFetchFromAPI(){
+  const url = `https://rt.ambientweather.net/v1/devices/${ET_MAC}` +
+    `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=288`;
+  const res  = await fetch(url);
+  if(!res.ok) throw new Error(`API ${res.status}`);
+  const data = await res.json();
+
+  // Ambient returns array of devices, each with lastData or the records directly
+  // With limit=288 it returns an array of 288 data records for the device
+  if(!Array.isArray(data) || data.length === 0) throw new Error('Empty response');
+
+  // If first item has lastData it's device list, not records
+  // With limit>1 it should be records directly
+  const records = data[0]?.lastData ? [data[0].lastData] : data;
+  return records;
+}
+
+// ── RENDER CHART ──────────────────────────────────────────────
 function etRenderChart(todayEt){
-  if(todayEt!==null) etLogToday(todayEt);
-  const days=etLogGetRange(8);
-  const vals=days.map(d=>d.et).filter(v=>v!==null);
-  const seasonal=0.20;
-  const maxVal=Math.max(...vals,seasonal,0.05);
-  let html='';
-  days.forEach(d=>{
-    const val=d.isToday?todayEt:d.et;
-    const isEst=val===null;
-    const display=isEst?seasonal:val;
-    const heightPct=Math.max(3,(display/maxVal)*100);
-    const barCls=d.isToday?'today':isEst?'est':'hist';
-    html+=`<div class="et-bar-col">
+  const days   = etLogGetRange(8); // 7 past + today
+  const seasonal = 0.20;
+
+  // Gather all real values to set max scale
+  const allReal = days.map(d => d.isToday ? todayEt : d.data?.et).filter(v => v != null && v > 0);
+  const maxVal  = Math.max(...allReal, seasonal, 0.05);
+
+  let html = '';
+  days.forEach(d => {
+    const val     = d.isToday ? todayEt : d.data?.et ?? null;
+    const isEst   = val === null;
+    const display = isEst ? seasonal : val;
+    const hPct    = Math.max(3, (display / maxVal) * 100);
+    const barCls  = d.isToday ? 'today' : isEst ? 'est' : 'hist';
+    const partial = !d.isToday && d.data?.isPartialDay ? '~' : '';
+    html += `<div class="et-bar-col">
       <div class="et-bar-wrap">
-        <div class="et-bar ${barCls}" style="height:${heightPct}%;" title="${d.lbl}: ${display.toFixed(3)}&quot;"></div>
+        <div class="et-bar ${barCls}" style="height:${hPct}%;"
+             title="${d.lbl}: ${partial}${display.toFixed(3)}&quot;${d.data?.recordCount ? ` (${d.data.recordCount} pts)` : ''}"></div>
       </div>
-      <div class="et-bar-val">${display.toFixed(2)}"</div>
+      <div class="et-bar-val">${partial}${display.toFixed(2)}"</div>
       <div class="et-bar-lbl">${d.lbl}</div>
     </div>`;
   });
-  document.getElementById('et-bar-chart').innerHTML=html;
+  document.getElementById('et-bar-chart').innerHTML = html;
 }
 
-function etSetScreen(mode){
-  etScreenMode=mode;
-  ['open','screen','cover'].forEach(m=>{
-    document.getElementById('sb-'+m)?.classList.toggle('active',m===mode);
-  });
-  if(window._lastEtIn!==undefined) etApplyResults(window._lastEtIn,window._lastStation);
-}
+// ── APPLY RESULTS TO DOM ──────────────────────────────────────
+function etApplyResults(entry, fromCache){
+  const etIn = entry.et;
 
-function etApplyResults(etIn,station){
-  window._lastEtIn=etIn;window._lastStation=station;
-  let cls='',badgeTxt='NORMAL';
-  if(etIn>0.22){cls='hot';badgeTxt='HIGH EVAP';}
-  else if(etIn>0.16){cls='warn';badgeTxt='ELEVATED';}
-  const elIn=document.getElementById('et-inches');
-  elIn.textContent=etIn.toFixed(3)+'"';
-  elIn.className='et-metric-num'+(cls?' '+cls:'');
-  const galOpen=etToGal(etIn,450);
-  document.getElementById('et-gal-std').textContent=galOpen.toFixed(1);
-  document.getElementById('et-gal-std-sub').textContent='450 sq ft · open reference';
-  document.getElementById('et-week').textContent=(etIn*7).toFixed(2)+'"';
-  const poolDefs=[
-    {id:'open',  sqft:450,factor:1.0},
-    {id:'screen',sqft:450,factor:ET_SCREEN_FACTORS.screen},
-    {id:'small', sqft:250,factor:1.0},
-    {id:'large', sqft:600,factor:1.0},
+  // Badge
+  let cls = '', badgeTxt = 'NORMAL';
+  if(etIn > 0.22){ cls = 'hot'; badgeTxt = 'HIGH EVAP'; }
+  else if(etIn > 0.16){ cls = 'warn'; badgeTxt = 'ELEVATED'; }
+  if(fromCache){ badgeTxt += ' ·CACHED'; }
+
+  const elIn = document.getElementById('et-inches');
+  elIn.textContent = etIn.toFixed(3) + '"';
+  elIn.className   = 'et-metric-num' + (cls ? ' ' + cls : '');
+
+  document.getElementById('et-gal-std').textContent     = etToGal(etIn, 450).toFixed(1);
+  document.getElementById('et-gal-std-sub').textContent = `450 sq ft · open · ${entry.recordCount || '?'} data pts`;
+  document.getElementById('et-week').textContent        = (etIn * 7).toFixed(2) + '"';
+
+  const badge = document.getElementById('et-badge');
+  badge.textContent = badgeTxt;
+  badge.className   = 'et-badge' + (fromCache ? ' cached' : etIn > 0.22 ? ' hot' : etIn > 0.16 ? ' warn' : '');
+
+  // Pool loss grid
+  const poolDefs = [
+    {id:'open',   sqft:450, factor:1.0},
+    {id:'screen', sqft:450, factor:ET_SCREEN_FACTORS.screen},
+    {id:'small',  sqft:250, factor:1.0},
+    {id:'large',  sqft:600, factor:1.0},
   ];
-  poolDefs.forEach(p=>{
-    const adjEt=etIn*p.factor;
-    const gDay=etToGal(adjEt,p.sqft);
-    const gWeek=gDay*7;
-    const inWeek=adjEt*7;
-    document.getElementById(`pl-${p.id}-day`).textContent=gDay.toFixed(1)+' gal/day';
-    document.getElementById(`pl-${p.id}-week`).textContent=
-      gWeek.toFixed(0)+' gal/wk · '+inWeek.toFixed(2)+'\" level drop';
+  poolDefs.forEach(p => {
+    const adjEt  = etIn * p.factor;
+    const gDay   = etToGal(adjEt, p.sqft);
+    const gWeek  = gDay * 7;
+    const inWeek = adjEt * 7;
+    document.getElementById(`pl-${p.id}-day`).textContent  = gDay.toFixed(1) + ' gal/day';
+    document.getElementById(`pl-${p.id}-week`).textContent =
+      gWeek.toFixed(0) + ' gal/wk · ' + inWeek.toFixed(2) + '" level drop';
   });
-  const badge=document.getElementById('et-badge');
-  badge.textContent=badgeTxt;
-  badge.className='et-badge'+(etIn>0.22?' hot':etIn>0.16?' warn':'');
-  if(station){
-    const tF=station.tempf??'—';
-    const rh=station.humidity??'—';
-    const ws=station.windspeedmph??'—';
-    const sr=station.solarradiation??'—';
-    document.getElementById('et-formula').innerHTML=
-      `<span class="lbl">Station inputs</span> · `+
-      `Temp: <span>${tF}°F</span> · RH: <span>${rh}%</span> · `+
-      `Wind: <span>${ws} mph</span> (–50% forest shelter) · Solar: <span>${sr} W/m²</span><br>`+
-      `Method: <span>Penman-Monteith</span> · Raw ET: <span>${etIn.toFixed(4)}"</span> · `+
-      `Screened row uses –65% factor · Open/Small/Large rows unmodified`;
-  } else {
-    document.getElementById('et-formula').textContent=
-      'Station offline — showing Tampa seasonal average (0.20 in/day)';
-  }
-  document.getElementById('et-status').innerHTML=
-    `Source: <span>Ambient C8:C9:A3:0E:CB:E2</span> · `+
-    `Updated: <span>${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span> · `+
-    `Wind shelter: <span>–50% applied (forest buffer)</span>`;
+
+  // Formula detail
+  const partialNote = entry.isPartialDay
+    ? ` <span style="color:var(--yellow);">(partial day — ${entry.recordCount} of ~288 pts)</span>` : '';
+  document.getElementById('et-formula').innerHTML =
+    `<span class="lbl">Daily averages from ${entry.recordCount || '?'} station readings</span>${partialNote}<br>` +
+    `Temp mean: <span>${entry.tmean}°F</span> · ` +
+    `RH mean: <span>${entry.rh}%</span> · ` +
+    `Wind mean: <span>${entry.wind} mph</span> (–50% shelter applied) · ` +
+    `Solar integrated: <span>${entry.rs} MJ/m²/day</span><br>` +
+    `Method: <span>Penman-Monteith</span> · ` +
+    `Raw ET: <span>${etIn.toFixed(4)}"</span>`;
+
+  // Age of data
+  const ageMin = entry.fetchedAt
+    ? Math.round((Date.now() - entry.fetchedAt) / 60000) : 0;
+  const ageStr = fromCache
+    ? `<span class="cached">cached ${ageMin} min ago</span> · <button class="et-refresh-btn" onclick="etForceRefresh()">Refresh now</button>`
+    : `<span>just fetched</span>`;
+
+  document.getElementById('et-status').innerHTML =
+    `Source: <span>Ambient C8:C9:A3:0E:CB:E2 · ${entry.recordCount || '?'} records</span> · ` +
+    `Data: ${ageStr} · ` +
+    `Next auto-refresh: <span>~${60 - ageMin} min</span>`;
+
   etRenderChart(etIn);
 }
 
-async function etFetch(){
+// ── FORCE REFRESH (bypass cache) ──────────────────────────────
+async function etForceRefresh(){
+  document.getElementById('et-status').innerHTML =
+    `<span class="spin"></span> Fetching fresh data from station...`;
+  await etRun(true);
+}
+
+// ── MAIN ET RUNNER ────────────────────────────────────────────
+// forceRefresh=true skips the cache check
+async function etRun(forceRefresh = false){
+  // 1. Check cache first (unless forced)
+  if(!forceRefresh){
+    const cached = etLogGetToday();
+    if(cached){
+      etApplyResults(cached, true);
+      return; // done — no API call needed
+    }
+  }
+
+  // 2. Cache is stale or missing — fetch from API
   try{
-    const url=`https://rt.ambientweather.net/v1/devices/${ET_MAC}`+
-      `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=1`;
-    const res=await fetch(url);
-    const data=await res.json();
-    const rec=Array.isArray(data)&&data.length>0?(data[0].lastData||data[0]):null;
-    if(!rec)throw new Error('No station data');
-    const Tmean=((rec.tempf??75)-32)*5/9;
-    const RH=rec.humidity??60;
-    const u2=(rec.windspeedmph??4)*0.44704*0.50; // mph→m/s, –50% shelter
-    const srWm2=rec.solarradiation??200;
-    const Rs=srWm2*11*3600/1e6; // W/m² → MJ/m²/day (11 hr Tampa daylight)
-    const etMm=penmanMonteith(Tmean,RH,u2,Rs,8);
-    etApplyResults(mmToIn(etMm),rec);
+    document.getElementById('et-badge').innerHTML = '<span class="spin"></span>';
+
+    const records = await etFetchFromAPI();
+    const entry   = processRecordsToET(records);
+
+    // Save to localStorage
+    const todayKey = new Date().toISOString().split('T')[0];
+    etLogSaveDay(todayKey, entry);
+
+    etApplyResults(entry, false);
+
   }catch(err){
-    document.getElementById('et-badge').textContent='EST';
-    document.getElementById('et-badge').className='et-badge warn';
-    document.getElementById('et-status').innerHTML=
-      `<span class="err">Station offline — seasonal estimate</span> · Error: ${err.message}`;
-    etApplyResults(0.20,null);
+    console.error('ET fetch error:', err);
+
+    // Try to show whatever we have in cache even if stale
+    const log     = etLogGet();
+    const todayKey = new Date().toISOString().split('T')[0];
+    const stale   = log[todayKey];
+
+    if(stale){
+      etApplyResults(stale, true);
+      document.getElementById('et-status').innerHTML +=
+        ` · <span class="err">refresh failed: ${err.message}</span>`;
+    } else {
+      // No data at all — show seasonal estimate
+      const fallback = {
+        et: 0.20, rs: 18.0, tmean: 80, rh: 65, wind: 4,
+        recordCount: 0, isPartialDay: true, fetchedAt: Date.now()
+      };
+      etApplyResults(fallback, false);
+      document.getElementById('et-badge').textContent = 'EST';
+      document.getElementById('et-badge').className   = 'et-badge warn';
+      document.getElementById('et-status').innerHTML  =
+        `<span class="err">Station unavailable · showing seasonal estimate (0.20"/day)</span> · ` +
+        `Error: ${err.message} · <button class="et-refresh-btn" onclick="etForceRefresh()">Retry</button>`;
+    }
   }
 }
 
+// ── SCREEN TOGGLE ─────────────────────────────────────────────
+function etSetScreen(mode){
+  etScreenMode = mode;
+  ['open','screen','cover'].forEach(m => {
+    document.getElementById('sb-' + m)?.classList.toggle('active', m === mode);
+  });
+  // Re-render with current data
+  const log     = etLogGet();
+  const todayKey = new Date().toISOString().split('T')[0];
+  const entry   = log[todayKey];
+  if(entry) etApplyResults(entry, true);
+}
+
 // ── BOOT ──────────────────────────────────────────────────────
-etRenderChart(null);  // show chart from localStorage immediately
-etFetch();            // then fetch live data
-setInterval(etFetch,15*60*1000); // refresh every 15 min
-init();               // core app
+// Render chart immediately from localStorage (shows historical bars right away)
+etRenderChart(null);
+// Run ET (uses cache if fresh, fetches if stale)
+etRun();
+// Core pool forecast
+init();
 </script>
 </body>
 </html>
