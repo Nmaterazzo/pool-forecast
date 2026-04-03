@@ -806,9 +806,10 @@ function processRecordsToET(records){
   const Tmean_F = avg(temps);
   const Tmean   = (Tmean_F - 32) * 5 / 9;             // → °C
   const RH      = rhs.length > 0 ? avg(rhs) : 65;
-  // Wind: average mph → m/s, apply 50% forest shelter
+  // Wind: average mph → m/s
+  // No shelter correction applied — station already reads sheltered wind due to forest buffer
   const windMph = winds.length > 0 ? avg(winds) : 3;
-  const u2      = windMph * 0.44704 * 0.50;
+  const u2      = windMph * 0.44704;
 
   // Solar: integrate W/m² readings → MJ/m²/day
   // Each record represents a 5-min interval (288 records = 24hrs)
@@ -933,7 +934,7 @@ function etApplyResults(entry, fromCache){
     `<span class="lbl">Daily averages from ${entry.recordCount || '?'} station readings</span>${partialNote}<br>` +
     `Temp mean: <span>${entry.tmean}°F</span> · ` +
     `RH mean: <span>${entry.rh}%</span> · ` +
-    `Wind mean: <span>${entry.wind} mph</span> (–50% shelter applied) · ` +
+    `Wind mean: <span>${entry.wind} mph</span> (station-measured · no correction) · ` +
     `Solar integrated: <span>${entry.rs} MJ/m²/day</span><br>` +
     `Method: <span>Penman-Monteith</span> · ` +
     `Raw ET: <span>${etIn.toFixed(4)}"</span>`;
@@ -948,7 +949,7 @@ function etApplyResults(entry, fromCache){
   document.getElementById('et-status').innerHTML =
     `Source: <span>Ambient C8:C9:A3:0E:CB:E2 · ${entry.recordCount || '?'} records</span> · ` +
     `Data: ${ageStr} · ` +
-    `Next auto-refresh: <span>~${60 - ageMin} min</span>`;
+    `Wind shelter: <span>none — station already reads sheltered wind</span>`;
 
   etRenderChart(etIn);
 }
