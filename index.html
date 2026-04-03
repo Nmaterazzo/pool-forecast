@@ -29,14 +29,12 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .uv-box{text-align:right;}
 .uv-val{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;line-height:1;}
 .uv-lbl{font-size:.46rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
-
 .rain-row{display:flex;gap:0;}
 .rcol{flex:1;text-align:center;padding:0 4px;border-right:1px solid var(--border);}
 .rcol:last-child{border-right:none;}
 .rcol-lbl{font-size:.42rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
 .rcol-val{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;}
 .data-src{font-size:.44rem;color:var(--muted);margin-top:6px;letter-spacing:.04em;}
-
 .tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);}
 .tab{flex:1;padding:9px 2px 7px;background:none;border:none;border-bottom:2px solid transparent;
   color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.58rem;
@@ -45,7 +43,6 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .tab-dot{width:5px;height:5px;border-radius:50%;margin:0 auto 3px;background:var(--border);}
 .tab.active .tab-dot{background:var(--blue);}
 .td-g{background:var(--green);}.td-y{background:var(--yellow);}.td-r{background:var(--red);}
-
 .content{padding:13px;display:flex;flex-direction:column;gap:11px;}
 
 /* FC INPUT */
@@ -81,8 +78,6 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .target-math{text-align:right;font-size:.54rem;color:var(--muted);line-height:1.9;}
 .target-math span{color:var(--text);}
 .target-math .floor{color:var(--green);font-weight:500;}
-
-/* Now → Target row */
 .arrow-row{display:flex;align-items:center;gap:7px;margin-bottom:10px;
   padding:8px 10px;background:var(--bg);border:1px solid var(--border);}
 .arrow-label{font-size:.48rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
@@ -91,11 +86,9 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .arrow-target{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--blue);}
 .arrow-add{font-size:.54rem;color:var(--muted);margin-left:auto;}
 .arrow-add span{color:var(--text);}
-
 .bar{height:7px;background:var(--border);overflow:hidden;margin-bottom:4px;}
 .bar-fill{height:100%;transition:width .4s;}
 .bar-lbls{display:flex;justify-content:space-between;font-size:.44rem;color:var(--muted);}
-
 .dose-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
 .dose-cell{background:var(--card);padding:11px 12px;}
 .dose-num{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;line-height:1;}
@@ -112,7 +105,6 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .wd-fc{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;}
 .wd-uv{font-size:.42rem;margin-top:1px;}
 .wd-uv.low{color:var(--green);}.wd-uv.mod{color:var(--yellow);}.wd-uv.high{color:var(--red);}
-/* floor line indicator */
 .wd.is-floor .wd-fc::after{content:'←';font-size:.4rem;color:var(--green);margin-left:2px;}
 
 /* LOW FC */
@@ -137,9 +129,58 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .skey{font-size:.56rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;}
 .sval{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;}
 .sval.ok{color:var(--green);}.sval.low{color:var(--yellow);}.sval.add{color:var(--salt);}
-
 .day-label{font-family:'Syne',sans-serif;font-size:.68rem;font-weight:700;
   letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+
+/* ── EVAPORATION CARD ──────────────────────────────────────── */
+.et-card{background:var(--card);border:1px solid var(--border);}
+.et-hdr{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 13px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015);}
+.et-title{font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.et-badge{font-size:.48rem;letter-spacing:.09em;text-transform:uppercase;padding:2px 6px;
+  background:rgba(56,189,248,.1);color:var(--blue);border:1px solid rgba(56,189,248,.2);}
+.et-badge.warn{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.2);}
+.et-badge.hot{background:rgba(251,146,60,.1);color:var(--orange);border:1px solid rgba(251,146,60,.2);}
+.et-hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.et-metric{background:var(--card);padding:11px 12px;}
+.et-metric-num{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;line-height:1;color:var(--blue);}
+.et-metric-num.warn{color:var(--yellow);}
+.et-metric-num.hot{color:var(--orange);}
+.et-metric-unit{font-size:.5rem;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-top:3px;}
+.et-metric-sub{font-size:.48rem;color:var(--muted);margin-top:2px;line-height:1.4;}
+.pool-loss-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.pl-cell{background:var(--card);padding:9px 12px;}
+.pl-label{font-size:.44rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.pl-val{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--text);}
+.pl-sub{font-size:.46rem;color:var(--muted);margin-top:2px;}
+.et-formula{padding:9px 13px;border-bottom:1px solid var(--border);font-size:.5rem;color:var(--muted);line-height:1.9;}
+.et-formula span{color:var(--text);}
+.et-formula .lbl{color:var(--blue);}
+.et-chart-wrap{padding:13px;}
+.et-chart-title{font-size:.52rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.et-bar-chart{display:flex;align-items:flex-end;gap:3px;height:96px;border-bottom:1px solid var(--border);}
+.et-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;}
+.et-bar-wrap{width:100%;display:flex;align-items:flex-end;justify-content:center;height:68px;}
+.et-bar{width:100%;border-radius:1px 1px 0 0;transition:height .4s ease;min-height:2px;}
+.et-bar.today{background:var(--blue);}
+.et-bar.hist{background:var(--muted);opacity:.6;}
+.et-bar.est{background:var(--yellow);opacity:.5;}
+.et-bar-lbl{font-size:.4rem;color:var(--muted);text-align:center;white-space:nowrap;padding-top:3px;}
+.et-bar-val{font-size:.42rem;color:var(--text);text-align:center;font-weight:500;padding-bottom:2px;}
+.et-chart-legend{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;}
+.et-leg-item{display:flex;align-items:center;gap:4px;font-size:.44rem;color:var(--muted);}
+.et-leg-dot{width:7px;height:7px;border-radius:1px;}
+.et-screen-row{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 13px;border-top:1px solid var(--border);}
+.et-screen-lbl{font-size:.52rem;color:var(--muted);}
+.et-screen-btns{display:flex;gap:4px;}
+.screen-btn{font-family:'IBM Plex Mono',monospace;font-size:.46rem;letter-spacing:.05em;
+  padding:3px 8px;cursor:pointer;border-radius:0;transition:all .15s;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);}
+.screen-btn.active{background:rgba(34,211,160,.12);border:1px solid var(--green);color:var(--green);}
+.et-status{padding:9px 13px;font-size:.5rem;color:var(--muted);border-top:1px solid var(--border);line-height:1.7;}
+.et-status span{color:var(--text);}
+.et-status .err{color:var(--red);}
 
 .spin{display:inline-block;width:9px;height:9px;border:1.5px solid var(--border);
   border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;}
@@ -187,51 +228,123 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 
 <div class="content" id="content"></div>
 
+<!-- ══════════════════════════════════════════════════════════
+     EVAPORATION CARD — bottom of page, outside daily content
+     ══════════════════════════════════════════════════════════ -->
+<div style="padding:0 13px 13px;">
+  <div class="et-card" id="et-card">
+
+    <div class="et-hdr">
+      <div class="et-title">Pool Evaporation</div>
+      <span class="et-badge" id="et-badge"><span class="spin"></span></span>
+    </div>
+
+    <div class="et-hero">
+      <div class="et-metric">
+        <div class="et-metric-num" id="et-inches"><span class="spin"></span></div>
+        <div class="et-metric-unit">in / day ET</div>
+        <div class="et-metric-sub">Penman-Monteith<br>from your station</div>
+      </div>
+      <div class="et-metric">
+        <div class="et-metric-num" id="et-gal-std">—</div>
+        <div class="et-metric-unit">gal / day · open pool</div>
+        <div class="et-metric-sub" id="et-gal-std-sub">450 sq ft reference</div>
+      </div>
+      <div class="et-metric">
+        <div class="et-metric-num warn" id="et-week">—</div>
+        <div class="et-metric-unit">in / week projected</div>
+        <div class="et-metric-sub">level drop · no refill</div>
+      </div>
+    </div>
+
+    <div class="pool-loss-grid">
+      <div class="pl-cell">
+        <div class="pl-label">Open Pool (450 sq ft)</div>
+        <div class="pl-val" id="pl-open-day">—</div>
+        <div class="pl-sub" id="pl-open-week">—</div>
+      </div>
+      <div class="pl-cell">
+        <div class="pl-label">Screened Pool (–65%)</div>
+        <div class="pl-val" id="pl-screen-day">—</div>
+        <div class="pl-sub" id="pl-screen-week">—</div>
+      </div>
+      <div class="pl-cell">
+        <div class="pl-label">Small Pool (250 sq ft)</div>
+        <div class="pl-val" id="pl-small-day">—</div>
+        <div class="pl-sub" id="pl-small-week">—</div>
+      </div>
+      <div class="pl-cell">
+        <div class="pl-label">Large Pool (600 sq ft)</div>
+        <div class="pl-val" id="pl-large-day">—</div>
+        <div class="pl-sub" id="pl-large-week">—</div>
+      </div>
+    </div>
+
+    <div class="et-formula" id="et-formula">Fetching station data...</div>
+
+    <div class="et-screen-row">
+      <div class="et-screen-lbl">Enclosure factor</div>
+      <div class="et-screen-btns">
+        <button class="screen-btn active" id="sb-open"   onclick="etSetScreen('open')">Open</button>
+        <button class="screen-btn"        id="sb-screen" onclick="etSetScreen('screen')">Screened</button>
+        <button class="screen-btn"        id="sb-cover"  onclick="etSetScreen('cover')">Covered</button>
+      </div>
+    </div>
+
+    <div class="et-chart-wrap">
+      <div class="et-chart-title">Daily ET — Past 7 Days + Today (inches/day)</div>
+      <div class="et-bar-chart" id="et-bar-chart">
+        <div style="color:var(--muted);font-size:.5rem;padding:8px;align-self:center;"><span class="spin"></span> loading...</div>
+      </div>
+      <div class="et-chart-legend">
+        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--blue)"></div>Today (live)</div>
+        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--muted);opacity:.6"></div>Historical (logged)</div>
+        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--yellow);opacity:.7"></div>Estimated (no data)</div>
+      </div>
+    </div>
+
+    <div class="et-status" id="et-status">Fetching station data...</div>
+
+  </div>
+</div>
+
 <script>
-// ── CONSTANTS ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  POOL FORECAST — CORE
+// ══════════════════════════════════════════════════════════════
 const POOL_GAL=10000, POOL_SQFT=450;
-const SALT_IDEAL=3200, SALT_MIN=2800, SALT_MAX=3400, SALT_BAG_PPM=200, SALT_POOLS=4;
-const UV_DECAY=0.01;         // ppm/UV-index-hour, CYA 50 stabilized
-const HYPO_OZ_PER_PPM=1.84; // 73% cal hypo oz per ppm per 10k gal (verified against pool math app)
-const TAB_PPM_WEEK=2.5;      // 3" tab contribution over 7 days in 10k gal (~2-3 ppm)
+const SALT_IDEAL=3200, SALT_BAG_PPM=200, SALT_POOLS=4;
+const UV_DECAY=0.01;
+const HYPO_OZ_PER_PPM=1.84;
+const TAB_PPM_WEEK=2.5;
 const RAIN_GAL_IN=POOL_SQFT*0.623;
 const FC_DEFAULT=7;
 const FC_SHOCK=20;
-
-// Water temp from Open-Meteo soil temp (good pool water proxy), in °F
-// Falls back to seasonal estimate if not loaded yet
-function waterTempF(daysAhead){
-  if(uvData?.daily?.soil_temperature_0_to_7cm_mean){
-    const idx=Math.min(daysAhead, uvData.daily.soil_temperature_0_to_7cm_mean.length-1);
-    const t=uvData.daily.soil_temperature_0_to_7cm_mean[idx];
-    if(t!=null) return Math.round(t*10)/10;
-  }
-  // Fallback: rough Florida seasonal estimate
-  const m=new Date().getMonth()+1;
-  return m>=5&&m<=9?85:m>=3&&m<=4||m>=10&&m<=11?74:64;
-}
-
-// FC floor based on water temp:
-// Linear scale anchored at 54°F→5ppm, 70°F→7ppm, 80°F→8ppm
-// Slope: (8-5)/(80-54) = 3/26 ≈ 0.115 ppm per °F
-function fcFloorFromTemp(tempF){
-  const floor=5+(tempF-54)*(3/26);
-  return Math.round(Math.max(4,Math.min(10,floor))*2)/2; // round to nearest 0.5, cap 4-10
-}
 
 const LAT=28.131, LON=-82.352;
 const WMS_MRMS='https://mesonet.agron.iastate.edu/cgi-bin/wms/us/mrms_nn.cgi';
 const WMS_WPC='https://mapservices.weather.noaa.gov/vector/services/precip/wpc_qpf/MapServer/WMSServer';
 
-// ── STATE ──────────────────────────────────────────────────
 function loadDS(d){try{return JSON.parse(sessionStorage.getItem('pd_'+d))||{};}catch{return{};}}
 function saveDS(d,s){try{sessionStorage.setItem('pd_'+d,JSON.stringify(s));}catch{}}
-
 const rain={obs1h:0,obs24h:0,obs48h:0,obs72h:0,fcast7d:0};
 let uvData=null;
 let activeDay=(()=>{const d=new Date().getDay();return d>=1&&d<=5?d-1:0;})();
 
-// ── MRMS PIXEL DECODE ──────────────────────────────────────
+function waterTempF(daysAhead){
+  if(uvData?.daily?.soil_temperature_0_to_7cm_mean){
+    const idx=Math.min(daysAhead,uvData.daily.soil_temperature_0_to_7cm_mean.length-1);
+    const t=uvData.daily.soil_temperature_0_to_7cm_mean[idx];
+    if(t!=null)return Math.round(t*10)/10;
+  }
+  const m=new Date().getMonth()+1;
+  return m>=5&&m<=9?85:m>=3&&m<=4||m>=10&&m<=11?74:64;
+}
+function fcFloorFromTemp(tempF){
+  const floor=5+(tempF-54)*(3/26);
+  return Math.round(Math.max(4,Math.min(10,floor))*2)/2;
+}
+
 const CM=[[0,0,255,0],[0,255,255,12.7],[0,255,0,25.4],[255,255,0,50.8],
   [255,128,0,76.2],[255,0,0,101.6],[180,0,180,152.4],[128,0,128,203.2],[255,255,255,254]];
 function px2mm(r,g,b){
@@ -293,8 +406,6 @@ async function fetchUV(){
   return(await fetch(u)).json();
 }
 
-// ── CHEMISTRY ─────────────────────────────────────────────
-// Total UV index-hours over 7 days starting daysAhead from today
 function uvSum7(daysAhead){
   if(!uvData)return 560;
   let s=0;
@@ -304,38 +415,19 @@ function uvSum7(daysAhead){
   }
   return s;
 }
-
-// THE CORE QUESTION:
-// "What FC do I dose to today so the pool is still at FLOOR next visit?"
-//
-// Simple: doseTarget = floor + net degradation over 7 days
-//   netDeg = uvLoss + rainLoss - tabGain
-//   doseTarget = floor + netDeg
-//
-function calcDoseTarget(uvSum, fcastRainIn, tabOn, tempF){
+function calcDoseTarget(uvSum,fcastRainIn,tabOn,tempF){
   const floor=fcFloorFromTemp(tempF??75);
-  const uvLoss=Math.round((uvSum*UV_DECAY+0.05)*10)/10; // round up at .5
-  const rainLoss=fcastRainIn>0
-    ?floor*(1-(POOL_GAL/(POOL_GAL+fcastRainIn*RAIN_GAL_IN)))
-    :0;
+  const uvLoss=Math.round((uvSum*UV_DECAY+0.05)*10)/10;
+  const rainLoss=fcastRainIn>0?floor*(1-(POOL_GAL/(POOL_GAL+fcastRainIn*RAIN_GAL_IN))):0;
   const tabGain=tabOn?TAB_PPM_WEEK:0;
   const netDeg=Math.max(0,uvLoss+rainLoss-tabGain);
   const target=floor+netDeg;
-  return{
-    target:Math.round(Math.min(FC_SHOCK-1,target)*10)/10,
-    uvLoss:Math.round(uvLoss*10)/10,
-    rainLoss:Math.round(rainLoss*10)/10,
-    netDeg:Math.round(netDeg*10)/10,
-    floor,
-    tabGain,
-    tempF:tempF??75
-  };
+  return{target:Math.round(Math.min(FC_SHOCK-1,target)*10)/10,
+    uvLoss:Math.round(uvLoss*10)/10,rainLoss:Math.round(rainLoss*10)/10,
+    netDeg:Math.round(netDeg*10)/10,floor,tabGain,tempF:tempF??75};
 }
-
-// Project FC day-by-day from a starting point
-function projectFC(startFC, daysAhead, tabOn){
-  const days=[];
-  let fc=startFC;
+function projectFC(startFC,daysAhead,tabOn){
+  const days=[];let fc=startFC;
   const todayDOW=new Date().getDay();
   const startDOW=(todayDOW+daysAhead)%7;
   const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -345,9 +437,8 @@ function projectFC(startFC, daysAhead, tabOn){
     if(i>0){
       const idx=Math.min(daysAhead+i,(uvData?.daily.uv_index_max.length??0)-1);
       const uvi=(uvData?.daily.uv_index_max[idx]??8)*10;
-      fc-=uvi*UV_DECAY;
-      fc+=dailyTabGain;
-      if(dailyRain>0) fc=fc*(POOL_GAL/(POOL_GAL+dailyRain*RAIN_GAL_IN));
+      fc-=uvi*UV_DECAY;fc+=dailyTabGain;
+      if(dailyRain>0)fc=fc*(POOL_GAL/(POOL_GAL+dailyRain*RAIN_GAL_IN));
       fc=Math.max(0,fc);
     }
     const uvI=uvData?.daily.uv_index_max[Math.min(daysAhead+i,(uvData?.daily.uv_index_max.length??0)-1)]??8;
@@ -356,95 +447,59 @@ function projectFC(startFC, daysAhead, tabOn){
   }
   return days;
 }
-
-function calcHypo(fcNow,target){
-  return Math.round(Math.max(0,target-fcNow)*HYPO_OZ_PER_PPM*10)/10;
-}
-function calcTabs(deficit){
-  if(deficit<=0)return'0';
-  if(deficit<3)return'½';
-  return'1';
-}
 function saltDrop(totalRainIn){return Math.round((totalRainIn*RAIN_GAL_IN/POOL_GAL)*SALT_IDEAL);}
 function uvClass(uv){return uv>=8?'high':uv>=5?'mod':'low';}
 function fcCol(fc,floor){return fc<floor*0.7?'var(--red)':fc<floor?'var(--yellow)':'var(--green)';}
-function barColor(target){
-  // gradient reflects where in the 0-20 range the target sits
-  const pct=Math.min(100,(target/FC_SHOCK)*100);
-  if(pct<35)return'var(--red)';
-  if(pct<55)return'var(--yellow)';
-  if(pct<75)return'var(--green)';
-  return'var(--blue)';
+function fmtRain(inches){
+  if(inches===0)return'0.00"';
+  if(inches>=0.01)return inches.toFixed(2)+'"';
+  return inches.toFixed(3)+'"';
 }
 
-// ── RENDER ─────────────────────────────────────────────────
 function renderDay(dayIdx){
   const ds=loadDS(dayIdx);
   const fcReading=ds.fc!==undefined?ds.fc:FC_DEFAULT;
-
   const todayDOW=new Date().getDay();
   const targetDOW=dayIdx+1;
   const daysAhead=(targetDOW-todayDOW+7)%7;
   const name=['Monday','Tuesday','Wednesday','Thursday','Friday'][dayIdx];
   const lbl=daysAhead===0?name+' — Today':name;
-
   const uv7=uvSum7(daysAhead);
   const fcastIn=rain.fcast7d??0;
   const obsIn=rain.obs72h??0;
-
   const tabOn=ds.tabOn!==false;
   const wTemp=waterTempF(daysAhead);
   const recTab=(uv7*UV_DECAY)>=3?1:0;
   const tabAmt=ds.tabAmt??recTab;
   const effectiveTabOn=tabOn&&tabAmt>0;
-  const{target,uvLoss,rainLoss,netDeg,floor,tabGain,tempF}=calcDoseTarget(uv7,fcastIn,effectiveTabOn,wTemp);
+  const{target,uvLoss,rainLoss,netDeg,floor,tabGain}=calcDoseTarget(uv7,fcastIn,effectiveTabOn,wTemp);
   const tabPpm=tabAmt>0?Math.round(tabAmt*2.5*10)/10:0;
   const fullDeficit=Math.max(0,target-fcReading);
-  // Only reduce hypo by tab contribution if offset is on — otherwise hypo covers full deficit
   const remainingDeficit=effectiveTabOn?Math.max(0,fullDeficit-tabPpm):fullDeficit;
   const hypoOz=Math.round(remainingDeficit*HYPO_OZ_PER_PPM*10)/10;
-
-  // Projected end-of-week FC if dosed to target
   const outlook=projectFC(target,daysAhead,effectiveTabOn);
-  const endFC=outlook[6].fc;
-
-  // Salt — drop based on 72h observed + 7d forecast rain combined
   const totalRainForSalt=obsIn+fcastIn;
   const drop=saltDrop(totalRainForSalt);
   const bagsPerPool=drop>=SALT_BAG_PPM?Math.floor(drop/SALT_BAG_PPM):0;
   const bagsTotal=bagsPerPool>0?bagsPerPool*SALT_POOLS:0;
-
-  // Outlook HTML
   let outH='';
   outlook.forEach((o,i)=>{
-    const isLast=i===6;
-    outH+=`<div class="wd${isLast?' is-floor':''}">
+    outH+=`<div class="wd${i===6?' is-floor':''}">
       <div class="wd-n">${o.n}</div>
       <div class="wd-fc" style="color:${fcCol(o.fc,floor)}">${o.fc}</div>
       <div class="wd-uv ${uvClass(o.uv)}">${o.uv}</div>
     </div>`;
   });
-
-  // FC input color
   const inputCol=fcReading<=3?'var(--red)':fcReading<=6?'var(--yellow)':'var(--green)';
-
-  // Season label
   const seasonFloor=`${floor} ppm floor · water ~${wTemp}°F`;
-
-  // Bar: show current FC position and target
   const targetPct=Math.min(100,(target/FC_SHOCK)*100);
-  const nowPct=Math.min(100,(fcReading/FC_SHOCK)*100);
-
   document.getElementById('content').innerHTML=`
     <div class="day-label">${lbl}</div>
-
-    <!-- FC READING -->
     <div class="fc-input-card">
       <div class="fc-lbl">Today's FC reading — route spot-check (ppm)</div>
       <div class="fc-row">
         <input class="fc-input" type="number" min="0" max="20" step="0.5"
-          value="${fcReading}"
-          style="color:${inputCol};border-color:${inputCol};"
+          value="${fcReading}" style="color:${inputCol};border-color:${inputCol};"
           oninput="onFC(${dayIdx},this.value)"/>
         <div class="fc-hints">
           <div class="fc-hint" style="color:var(--red);">Below 4 = too low</div>
@@ -454,16 +509,12 @@ function renderDay(dayIdx){
         </div>
       </div>
     </div>
-
-    <!-- DOSE TARGET -->
     <div class="card">
       <div class="card-hdr">
         <div class="card-title">Dose All Pools To</div>
         <span class="cbadge bg">≥${floor} PPM NEXT VISIT</span>
       </div>
       <div class="target-block">
-
-        <!-- Hero number -->
         <div class="target-hero">
           <div>
             <div class="target-num">${target}<span class="target-unit">PPM</span></div>
@@ -478,31 +529,22 @@ function renderDay(dayIdx){
             = Dose to: <span class="floor">${target} ppm</span>
           </div>
         </div>
-
-        <!-- Now → Target -->
         <div class="arrow-row">
           <div class="arrow-label">Now</div>
           <div class="arrow-fc" style="color:${inputCol}">${fcReading}</div>
           <div class="arrow-sep">→</div>
           <div class="arrow-target">${target}</div>
           <div class="arrow-label" style="margin-left:2px;">target</div>
-          <div class="arrow-add" style="margin-left:auto;">
-            +<span>${Math.round(Math.max(0,target-fcReading)*10)/10} ppm needed</span>
-          </div>
+          <div class="arrow-add" style="margin-left:auto;">+<span>${Math.round(Math.max(0,target-fcReading)*10)/10} ppm needed</span></div>
         </div>
-
-        <!-- Bar: shows target position on 0-20 scale -->
-        <div class="bar" style="position:relative;">
+        <div class="bar">
           <div class="bar-fill" style="width:${targetPct}%;background:linear-gradient(90deg,var(--red),var(--yellow) 35%,var(--green) 55%,var(--blue));"></div>
         </div>
         <div class="bar-lbls" style="margin-bottom:10px;">
           <span>0</span><span>Floor ${floor}</span><span>10</span><span>Shock ${FC_SHOCK}</span>
         </div>
-
-        <!-- Dose section -->
         <div style="border-top:1px solid var(--border);margin:0 -13px -13px;">
           <div class="dose-grid">
-            <!-- CAL HYPO CELL -->
             <div class="dose-cell">
               <div class="dose-num" style="color:${remainingDeficit>0?'var(--text)':'var(--muted)'}">
                 ${remainingDeficit<=0?'None needed':`${hypoOz} oz`}
@@ -514,8 +556,6 @@ function renderDay(dayIdx){
                   :`Tabs cover full deficit`}
               </div>
             </div>
-
-            <!-- TAB CELL -->
             <div class="dose-cell">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">
                 <button onclick="toggleTab(${dayIdx})"
@@ -543,25 +583,18 @@ function renderDay(dayIdx){
                   </button>`).join('')}
               </div>
               <div class="dose-unit">3" Tabs${tabAmt>0?` · +${tabPpm} ppm`:''}${tabAmt===recTab?' (rec)':''}</div>
-              `:`
-              <div style="font-size:.52rem;color:var(--muted);line-height:1.5;">Add tabs separately<br>as needed</div>
-              `}
+              `:`<div style="font-size:.52rem;color:var(--muted);line-height:1.5;">Add tabs separately<br>as needed</div>`}
             </div>
           </div>
         </div>
-
       </div>
       <div class="dose-meta">
         72hr rain obs: <span style="color:var(--blue)">${fmtRain(obsIn)}</span> ·
         7d fcst rain: <span style="color:var(--green)">${fmtRain(fcastIn)}</span> ·
         Avg UV: <span>${Math.round(uv7/70)}</span>
       </div>
-
-      <!-- 7-day FC survival -->
       <div class="week-row">${outH}</div>
     </div>
-
-    <!-- LOW FC POOLS -->
     <div class="low-card">
       <div class="low-hdr">
         <div class="card-title" style="color:var(--orange);">If a Pool Has 0 Chlorine or Has Algae</div>
@@ -569,39 +602,24 @@ function renderDay(dayIdx){
       </div>
       <div class="low-inner">
         <div class="low-desc">Any pool with 0–2 ppm or visible algae needs shock treatment in addition to the standard dose.</div>
-        <div class="ldrow">
-          <span class="ldkey">73% Cal Hypo (per pool)</span>
-          <span class="ldval">${Math.round(FC_SHOCK*HYPO_OZ_PER_PPM*10)/10} oz</span>
-        </div>
-        <div class="ldrow">
-          <span class="ldkey">Target FC</span>
-          <span class="ldval">${FC_SHOCK} ppm</span>
-        </div>
-        <div class="ldrow">
-          <span class="ldkey">Tab</span>
-          <span class="ldval">1 tab</span>
-        </div>
+        <div class="ldrow"><span class="ldkey">73% Cal Hypo (per pool)</span><span class="ldval">${Math.round(FC_SHOCK*HYPO_OZ_PER_PPM*10)/10} oz</span></div>
+        <div class="ldrow"><span class="ldkey">Target FC</span><span class="ldval">${FC_SHOCK} ppm</span></div>
+        <div class="ldrow"><span class="ldkey">Tab</span><span class="ldval">1 tab</span></div>
         <div class="bromide-block">
           <div class="bromide-title">🧪 Green or cloudy water</div>
           <div class="bromide-txt">Add sodium bromide before shocking. Brush walls and floor. Re-test in 24 hrs. Flag for follow-up if still green.</div>
         </div>
       </div>
     </div>
-
-    <!-- SALT POOLS -->
     <div class="card">
       <div class="card-hdr">
         <div class="card-title">Salt Pools</div>
         <span class="cbadge bs">${SALT_POOLS} POOLS/DAY</span>
       </div>
-      <div class="srow"><div class="skey">Ideal salinity</div>
-        <div class="sval ok">3,000 – 3,400 ppm</div></div>
-      <div class="srow"><div class="skey">Est. salinity drop after rain</div>
-        <div class="sval ${drop>=400?'low':'ok'}">−${drop} ppm</div></div>
-      <div class="srow"><div class="skey">72hr observed rain</div>
-        <div class="sval" style="color:var(--blue)">${fmtRain(obsIn)}</div></div>
-      <div class="srow"><div class="skey">7d forecast rain</div>
-        <div class="sval" style="color:var(--green)">${fmtRain(fcastIn)}</div></div>
+      <div class="srow"><div class="skey">Ideal salinity</div><div class="sval ok">3,000 – 3,400 ppm</div></div>
+      <div class="srow"><div class="skey">Est. salinity drop after rain</div><div class="sval ${drop>=400?'low':'ok'}">−${drop} ppm</div></div>
+      <div class="srow"><div class="skey">72hr observed rain</div><div class="sval" style="color:var(--blue)">${fmtRain(obsIn)}</div></div>
+      <div class="srow"><div class="skey">7d forecast rain</div><div class="sval" style="color:var(--green)">${fmtRain(fcastIn)}</div></div>
       ${bagsTotal>0
         ?`<div class="srow"><div class="skey">Per salt pool</div><div class="sval add">${bagsPerPool} bag${bagsPerPool!==1?'s':''}</div></div>
            <div class="srow"><div class="skey">Total (${SALT_POOLS} pools)</div><div class="sval add">${bagsTotal} bags</div></div>`
@@ -610,33 +628,17 @@ function renderDay(dayIdx){
   `;
 }
 
-// ── CONTROLS ───────────────────────────────────────────────
-function setTabAmt(dayIdx,amt){
-  const ds=loadDS(dayIdx);
-  ds.tabAmt=amt;
-  saveDS(dayIdx,ds);
-  renderDay(dayIdx);
-}
-function toggleTab(dayIdx){
-  const ds=loadDS(dayIdx);
-  ds.tabOn=ds.tabOn===false?true:false; // flip
-  saveDS(dayIdx,ds);
-  renderDay(dayIdx);
-  updateDots();
-}
+function setTabAmt(dayIdx,amt){const ds=loadDS(dayIdx);ds.tabAmt=amt;saveDS(dayIdx,ds);renderDay(dayIdx);}
+function toggleTab(dayIdx){const ds=loadDS(dayIdx);ds.tabOn=ds.tabOn===false?true:false;saveDS(dayIdx,ds);renderDay(dayIdx);updateDots();}
 function onFC(dayIdx,val){
-  const v=parseFloat(val);
-  const ds=loadDS(dayIdx);
+  const v=parseFloat(val);const ds=loadDS(dayIdx);
   ds.fc=isNaN(v)?FC_DEFAULT:Math.max(0,Math.min(30,v));
-  saveDS(dayIdx,ds);
-  renderDay(dayIdx);
-  updateDots();
+  saveDS(dayIdx,ds);renderDay(dayIdx);updateDots();
 }
 function selDay(idx,btn){
   activeDay=idx;
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderDay(idx);
+  btn.classList.add('active');renderDay(idx);
 }
 function updateDots(){
   const floor=fcFloorFromTemp(waterTempF(0));
@@ -647,20 +649,8 @@ function updateDots(){
     el.className=fc<4?'tab-dot td-r':fc<floor?'tab-dot td-y':'tab-dot td-g';
   }
 }
-
-// ── INIT ───────────────────────────────────────────────────
-// Show enough decimals to always display at least 1 significant digit
-function fmtRain(inches){
-  if(inches===0) return '0.00"';
-  if(inches>=0.1) return inches.toFixed(2)+'"';
-  if(inches>=0.01) return inches.toFixed(2)+'"';
-  return inches.toFixed(3)+'"';
-}
-
 async function init(){
-  renderDay(activeDay);
-  updateDots();
-
+  renderDay(activeDay);updateDots();
   const[r1h,r24h,r48h,r72h,uvRaw,r7d]=await Promise.all([
     fetchMRMS('mrms_p1h').catch(()=>0),
     fetchMRMS('mrms_p24h').catch(()=>0),
@@ -669,10 +659,8 @@ async function init(){
     fetchUV().catch(()=>null),
     fetchWPC(15).catch(()=>0),
   ]);
-
   rain.obs1h=r1h;rain.obs24h=r24h;rain.obs48h=r48h;rain.obs72h=r72h;rain.fcast7d=r7d;
   uvData=uvRaw;
-
   document.getElementById('r1h').textContent=fmtRain(r1h);
   document.getElementById('r24h').textContent=fmtRain(r24h);
   document.getElementById('r48h').textContent=fmtRain(r48h);
@@ -684,8 +672,7 @@ async function init(){
     const peakUV=Math.max(...weekUVs);
     document.getElementById('hdr-uv').textContent=todayUV.toFixed(1);
     document.getElementById('hdr-uv-peak').textContent=peakUV.toFixed(1);
-    const wt=waterTempF(0);
-    const fl=fcFloorFromTemp(wt);
+    const wt=waterTempF(0);const fl=fcFloorFromTemp(wt);
     document.getElementById('hdr-wtemp').textContent=wt+'°F';
     document.getElementById('hdr-floor').textContent=fl+' ppm';
     document.getElementById('app-sub').textContent=
@@ -693,12 +680,174 @@ async function init(){
   }
   document.getElementById('data-src').textContent=
     `MRMS/IEM observed · WPC QPF D1–7 · ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
-
-  renderDay(activeDay);
-  updateDots();
+  renderDay(activeDay);updateDots();
 }
 
-init();
+// ══════════════════════════════════════════════════════════════
+//  EVAPORATION MODULE
+// ══════════════════════════════════════════════════════════════
+const ET_API_KEY = 'e69bc01ace6e448d9dc47471ee49520bd2d77c740fa44c5faaa64727f50515c1';
+const ET_APP_KEY = '6c3da7cd61eb4102a36fc7fba93b16694edeb3c17cb54bd49bb3e42f465e8a2c';
+const ET_MAC     = 'C8:C9:A3:0E:CB:E2';
+const ET_SCREEN_FACTORS = {open:1.0, screen:0.35, cover:0.05};
+let etScreenMode = 'open';
+
+// Penman-Monteith — returns ETo mm/day
+// Tmean °C, RH %, u2 m/s, Rs MJ/m²/day, elev m
+function penmanMonteith(Tmean,RH,u2,Rs,elev=8){
+  const es    = 0.6108*Math.exp(17.27*Tmean/(Tmean+237.3));
+  const ea    = es*(RH/100);
+  const delta = 4098*es/Math.pow(Tmean+237.3,2);
+  const P     = 101.3*Math.pow((293-0.0065*elev)/293,5.26);
+  const gamma = 0.000665*P;
+  const Rns   = (1-0.23)*Rs;
+  const TK    = Tmean+273.16;
+  const Rnl   = 4.903e-9*Math.pow(TK,4)*(0.34-0.14*Math.sqrt(ea))*
+                (1.35*Math.min(Rs/(0.75*(Rs+0.1)),1)-0.35);
+  const Rn    = Rns-Rnl;
+  const num   = 0.408*delta*Rn+gamma*(900/(Tmean+273))*u2*(es-ea);
+  const den   = delta+gamma*(1+0.34*u2);
+  return Math.max(0,num/den);
+}
+function mmToIn(mm){return mm/25.4;}
+function etToGal(etIn,sqft){return etIn*sqft*0.6233;}
+
+// ET log
+const ET_LOG_KEY='poolEtLog';
+function etLogGet(){try{return JSON.parse(localStorage.getItem(ET_LOG_KEY)||'{}');}catch{return{};}}
+function etLogSave(l){try{localStorage.setItem(ET_LOG_KEY,JSON.stringify(l));}catch{}}
+function etLogToday(etIn){
+  const log=etLogGet();
+  const key=new Date().toISOString().split('T')[0];
+  log[key]={et:etIn,ts:new Date().toISOString()};
+  const cutoff=new Date(Date.now()-30*864e5).toISOString().split('T')[0];
+  Object.keys(log).forEach(d=>{if(d<cutoff)delete log[d];});
+  etLogSave(log);
+}
+function etLogGetRange(days){
+  const log=etLogGet();const result=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(Date.now()-i*864e5);
+    const key=d.toISOString().split('T')[0];
+    const lbl=i===0?'Today':i===1?'Yest.':d.toLocaleDateString('en-US',{weekday:'short'});
+    result.push({key,lbl,et:log[key]?.et??null,isToday:i===0});
+  }
+  return result;
+}
+
+function etRenderChart(todayEt){
+  if(todayEt!==null) etLogToday(todayEt);
+  const days=etLogGetRange(8);
+  const vals=days.map(d=>d.et).filter(v=>v!==null);
+  const seasonal=0.20;
+  const maxVal=Math.max(...vals,seasonal,0.05);
+  let html='';
+  days.forEach(d=>{
+    const val=d.isToday?todayEt:d.et;
+    const isEst=val===null;
+    const display=isEst?seasonal:val;
+    const heightPct=Math.max(3,(display/maxVal)*100);
+    const barCls=d.isToday?'today':isEst?'est':'hist';
+    html+=`<div class="et-bar-col">
+      <div class="et-bar-wrap">
+        <div class="et-bar ${barCls}" style="height:${heightPct}%;" title="${d.lbl}: ${display.toFixed(3)}&quot;"></div>
+      </div>
+      <div class="et-bar-val">${display.toFixed(2)}"</div>
+      <div class="et-bar-lbl">${d.lbl}</div>
+    </div>`;
+  });
+  document.getElementById('et-bar-chart').innerHTML=html;
+}
+
+function etSetScreen(mode){
+  etScreenMode=mode;
+  ['open','screen','cover'].forEach(m=>{
+    document.getElementById('sb-'+m)?.classList.toggle('active',m===mode);
+  });
+  if(window._lastEtIn!==undefined) etApplyResults(window._lastEtIn,window._lastStation);
+}
+
+function etApplyResults(etIn,station){
+  window._lastEtIn=etIn;window._lastStation=station;
+  let cls='',badgeTxt='NORMAL';
+  if(etIn>0.22){cls='hot';badgeTxt='HIGH EVAP';}
+  else if(etIn>0.16){cls='warn';badgeTxt='ELEVATED';}
+  const elIn=document.getElementById('et-inches');
+  elIn.textContent=etIn.toFixed(3)+'"';
+  elIn.className='et-metric-num'+(cls?' '+cls:'');
+  const galOpen=etToGal(etIn,450);
+  document.getElementById('et-gal-std').textContent=galOpen.toFixed(1);
+  document.getElementById('et-gal-std-sub').textContent='450 sq ft · open reference';
+  document.getElementById('et-week').textContent=(etIn*7).toFixed(2)+'"';
+  const poolDefs=[
+    {id:'open',  sqft:450,factor:1.0},
+    {id:'screen',sqft:450,factor:ET_SCREEN_FACTORS.screen},
+    {id:'small', sqft:250,factor:1.0},
+    {id:'large', sqft:600,factor:1.0},
+  ];
+  poolDefs.forEach(p=>{
+    const adjEt=etIn*p.factor;
+    const gDay=etToGal(adjEt,p.sqft);
+    const gWeek=gDay*7;
+    const inWeek=adjEt*7;
+    document.getElementById(`pl-${p.id}-day`).textContent=gDay.toFixed(1)+' gal/day';
+    document.getElementById(`pl-${p.id}-week`).textContent=
+      gWeek.toFixed(0)+' gal/wk · '+inWeek.toFixed(2)+'\" level drop';
+  });
+  const badge=document.getElementById('et-badge');
+  badge.textContent=badgeTxt;
+  badge.className='et-badge'+(etIn>0.22?' hot':etIn>0.16?' warn':'');
+  if(station){
+    const tF=station.tempf??'—';
+    const rh=station.humidity??'—';
+    const ws=station.windspeedmph??'—';
+    const sr=station.solarradiation??'—';
+    document.getElementById('et-formula').innerHTML=
+      `<span class="lbl">Station inputs</span> · `+
+      `Temp: <span>${tF}°F</span> · RH: <span>${rh}%</span> · `+
+      `Wind: <span>${ws} mph</span> (–50% forest shelter) · Solar: <span>${sr} W/m²</span><br>`+
+      `Method: <span>Penman-Monteith</span> · Raw ET: <span>${etIn.toFixed(4)}"</span> · `+
+      `Screened row uses –65% factor · Open/Small/Large rows unmodified`;
+  } else {
+    document.getElementById('et-formula').textContent=
+      'Station offline — showing Tampa seasonal average (0.20 in/day)';
+  }
+  document.getElementById('et-status').innerHTML=
+    `Source: <span>Ambient C8:C9:A3:0E:CB:E2</span> · `+
+    `Updated: <span>${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span> · `+
+    `Wind shelter: <span>–50% applied (forest buffer)</span>`;
+  etRenderChart(etIn);
+}
+
+async function etFetch(){
+  try{
+    const url=`https://rt.ambientweather.net/v1/devices/${ET_MAC}`+
+      `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=1`;
+    const res=await fetch(url);
+    const data=await res.json();
+    const rec=Array.isArray(data)&&data.length>0?(data[0].lastData||data[0]):null;
+    if(!rec)throw new Error('No station data');
+    const Tmean=((rec.tempf??75)-32)*5/9;
+    const RH=rec.humidity??60;
+    const u2=(rec.windspeedmph??4)*0.44704*0.50; // mph→m/s, –50% shelter
+    const srWm2=rec.solarradiation??200;
+    const Rs=srWm2*11*3600/1e6; // W/m² → MJ/m²/day (11 hr Tampa daylight)
+    const etMm=penmanMonteith(Tmean,RH,u2,Rs,8);
+    etApplyResults(mmToIn(etMm),rec);
+  }catch(err){
+    document.getElementById('et-badge').textContent='EST';
+    document.getElementById('et-badge').className='et-badge warn';
+    document.getElementById('et-status').innerHTML=
+      `<span class="err">Station offline — seasonal estimate</span> · Error: ${err.message}`;
+    etApplyResults(0.20,null);
+  }
+}
+
+// ── BOOT ──────────────────────────────────────────────────────
+etRenderChart(null);  // show chart from localStorage immediately
+etFetch();            // then fetch live data
+setInterval(etFetch,15*60*1000); // refresh every 15 min
+init();               // core app
 </script>
 </body>
 </html>
