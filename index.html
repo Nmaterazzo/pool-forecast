@@ -857,14 +857,12 @@ function processRecordsToET(records){
 // endDate = now in ms gives us the most recent 288 readings (5-min intervals).
 // API rate limit: 1 req/sec, 288 reqs/day per device — we cache aggressively.
 async function etFetchFromAPI(){
-  // end_date = current time in SECONDS (Unix timestamp, not ms)
-  // Parameter is end_date with underscore per Ambient API docs
-  // Returns 288 records going back 24hrs from end_date, newest-first
-  const end_date = Math.floor(Date.now() / 1000);
-  // api.ambientweather.net is the REST/historical base URL
-  // rt.ambientweather.net is realtime only — returns latest snapshot regardless of limit
+  // Ambient REST API historical endpoint — api subdomain (not rt)
+  // endDate in milliseconds, MAC address raw (no URL encoding)
+  // Returns up to 288 records going back from endDate, newest-first
+  const endDate = Date.now();
   const url = `https://api.ambientweather.net/v1/devices/${ET_MAC}` +
-    `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=288&end_date=${end_date}`;
+    `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=288&endDate=${endDate}`;
 
   const res = await fetch(url);
   if(!res.ok) throw new Error(`API ${res.status}`);
@@ -872,7 +870,6 @@ async function etFetchFromAPI(){
 
   if(!Array.isArray(data) || data.length === 0) throw new Error('Empty response');
 
-  // Returns array of data records directly, newest-first
   return data;
 }
 
