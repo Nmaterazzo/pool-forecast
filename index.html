@@ -307,7 +307,7 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
       <div class="et-chart-legend">
         <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--blue)"></div>Today (live)</div>
         <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--green);opacity:.7"></div>Historical (real data)</div>
-        <div class="et-leg-item"><div class="et-leg-dot" style="background:var(--yellow);opacity:.45"></div>Estimated (no data)</div>
+        <div class="et-leg-item" style="color:var(--muted);font-style:italic;">Chart grows day by day from first use</div>
       </div>
     </div>
 
@@ -778,65 +778,76 @@ function etLogGetRange(days){
 }
 
 // ── PROCESS 288 RECORDS → DAILY ET ───────────────────────────
-// records: array of Ambient data objects (newest first from API)
-// We integrate solar radiation and average temp/RH/wind
+// Runs Penman-Monteith on every 5-minute record individually,
+// then sums the resulting ET increments for the true daily total.
+// This captures variable interactions at each moment rather than
+// flattening everything into daily means first.
 function processRecordsToET(records){
   if(!records || records.length === 0) throw new Error('No records');
 
   // Filter to records from today (local date)
   const todayStr = new Date().toISOString().split('T')[0];
   const todayRecs = records.filter(r => {
-    if(!r.dateutc && !r.date) return true; // include if no date
+    if(!r.dateutc && !r.date) return true;
     const d = new Date(r.dateutc || r.date);
     return d.toISOString().split('T')[0] === todayStr;
   });
-
   const recs = todayRecs.length > 0 ? todayRecs : records;
+  if(recs.length === 0) throw new Error('No records for today');
 
-  // Extract valid readings
-  const temps  = recs.map(r => r.tempf).filter(v => v != null && v > 0);
-  const rhs    = recs.map(r => r.humidity).filter(v => v != null && v > 0);
-  const winds  = recs.map(r => r.windspeedmph).filter(v => v != null && v >= 0);
-  const solars = recs.map(r => r.solarradiation).filter(v => v != null && v >= 0);
+  // Each Ambient record = 5-min interval = 300 seconds
+  const intervalSec = 300;
 
-  if(temps.length === 0) throw new Error('No temperature data in records');
+  let etTotalMm  = 0;
+  let validCount = 0;
+  let sumTemp = 0, sumRH = 0, sumWind = 0, sumSolar = 0;
+  let tempCount = 0, rhCount = 0, windCount = 0, solarCount = 0;
 
-  const avg = arr => arr.reduce((a,b) => a + b, 0) / arr.length;
+  recs.forEach(r => {
+    const tempF   = r.tempf;
+    const rh      = r.humidity;
+    const windMph = r.windspeedmph;
+    const solar   = r.solarradiation;
 
-  const Tmean_F = avg(temps);
-  const Tmean   = (Tmean_F - 32) * 5 / 9;             // → °C
-  const RH      = rhs.length > 0 ? avg(rhs) : 65;
-  // Wind: average mph → m/s
-  // No shelter correction applied — station already reads sheltered wind due to forest buffer
-  const windMph = winds.length > 0 ? avg(winds) : 3;
-  const u2      = windMph * 0.44704;
+    // Need at least temp to run PM for this interval
+    if(tempF == null || tempF <= 0) return;
 
-  // Solar: integrate W/m² readings → MJ/m²/day
-  // Each record represents a 5-min interval (288 records = 24hrs)
-  // Energy per interval = W/m² × 300 seconds / 1,000,000 = MJ per interval
-  // Sum all intervals for daily total Rs
-  let Rs = 0;
-  if(solars.length > 0){
-    // Interval duration in seconds — Ambient logs every ~5 min
-    const intervalSec = (24 * 3600) / Math.max(solars.length, 1);
-    Rs = solars.reduce((sum, w) => sum + (w * intervalSec / 1e6), 0);
-  } else {
-    // Fallback: use typical Tampa April Rs if no solar sensor
-    Rs = 18.0;
-  }
+    const Tmean = (tempF - 32) * 5 / 9;                       // °F -> °C
+    const RHi   = (rh != null && rh > 0) ? rh : 65;           // % fallback
+    // Wind: m/s, no correction — station already sheltered by forest
+    const u2i   = (windMph != null && windMph >= 0) ? windMph * 0.44704 : 1.0;
+    // Solar: W/m² instantaneous -> MJ/m²/day equivalent for PM equation
+    // W/m² × 0.0864 = MJ/m²/day  (since 1 W = 1 J/s, × 86400s/day ÷ 1e6)
+    const solarW    = (solar != null && solar >= 0) ? solar : 0;
+    const Rs_equiv  = solarW * 0.0864;
 
-  const etMm = penmanMonteith(Tmean, RH, u2, Rs, 8);
-  const etIn = mmToIn(etMm);
+    // PM gives mm/day rate at this instant — scale down to this 5-min interval
+    const etRateMm_day  = penmanMonteith(Tmean, RHi, u2i, Rs_equiv, 8);
+    const etIntervalMm  = etRateMm_day * (intervalSec / 86400);
+
+    etTotalMm += etIntervalMm;
+    validCount++;
+
+    sumTemp  += tempF;    tempCount++;
+    sumRH    += RHi;      rhCount++;
+    sumWind  += (windMph != null ? windMph : 0); windCount++;
+    sumSolar += solarW;   solarCount++;
+  });
+
+  if(validCount === 0) throw new Error('No valid temperature readings');
+
+  const etIn = mmToIn(etTotalMm);
 
   return {
-    et:          Math.round(etIn * 10000) / 10000,
-    rs:          Math.round(Rs * 100) / 100,
-    tmean:       Math.round(Tmean_F * 10) / 10,
-    rh:          Math.round(RH),
-    wind:        Math.round(windMph * 10) / 10,
-    recordCount: recs.length,
-    isPartialDay: recs.length < 200, // flag if we have less than ~70% of a full day
-    fetchedAt:   Date.now(),
+    et:           Math.round(etIn * 10000) / 10000,
+    rs:           Math.round((solarCount > 0 ? (sumSolar / solarCount) * 0.0864 : 0) * 100) / 100,
+    tmean:        Math.round((sumTemp / tempCount) * 10) / 10,
+    rh:           Math.round(sumRH / rhCount),
+    wind:         Math.round((sumWind / windCount) * 10) / 10,
+    recordCount:  recs.length,
+    validCount,
+    isPartialDay: recs.length < 200,
+    fetchedAt:    Date.now(),
   };
 }
 
@@ -860,31 +871,55 @@ async function etFetchFromAPI(){
 }
 
 // ── RENDER CHART ──────────────────────────────────────────────
+// Only shows bars for days with real logged data.
+// No estimated/fallback bars — chart grows naturally from first use.
 function etRenderChart(todayEt){
-  const days   = etLogGetRange(8); // 7 past + today
-  const seasonal = 0.20;
+  const days = etLogGetRange(8); // 7 past + today
 
-  // Gather all real values to set max scale
-  const allReal = days.map(d => d.isToday ? todayEt : d.data?.et).filter(v => v != null && v > 0);
-  const maxVal  = Math.max(...allReal, seasonal, 0.05);
+  // Only include days that have real data (or today with live ET)
+  const realDays = days.filter(d => d.isToday ? todayEt !== null : d.data?.et != null);
+
+  if(realDays.length === 0){
+    document.getElementById('et-bar-chart').innerHTML =
+      `<div style="color:var(--muted);font-size:.5rem;padding:12px;align-self:center;text-align:center;width:100%;">
+        Chart builds as data is collected — check back tomorrow
+      </div>`;
+    return;
+  }
+
+  const allVals = realDays.map(d => d.isToday ? todayEt : d.data.et);
+  const maxVal  = Math.max(...allVals, 0.05);
 
   let html = '';
   days.forEach(d => {
     const val     = d.isToday ? todayEt : d.data?.et ?? null;
-    const isEst   = val === null;
-    const display = isEst ? seasonal : val;
-    const hPct    = Math.max(3, (display / maxVal) * 100);
-    const barCls  = d.isToday ? 'today' : isEst ? 'est' : 'hist';
+    const hasData = val !== null;
+
+    if(!hasData){
+      // Empty slot — show faint placeholder column so spacing stays consistent
+      html += `<div class="et-bar-col">
+        <div class="et-bar-wrap"></div>
+        <div class="et-bar-val" style="color:var(--border);">—</div>
+        <div class="et-bar-lbl">${d.lbl}</div>
+      </div>`;
+      return;
+    }
+
+    const hPct    = Math.max(3, (val / maxVal) * 100);
+    const barCls  = d.isToday ? 'today' : 'hist';
     const partial = !d.isToday && d.data?.isPartialDay ? '~' : '';
+    const pts     = d.data?.validCount ?? d.data?.recordCount ?? '';
+
     html += `<div class="et-bar-col">
       <div class="et-bar-wrap">
         <div class="et-bar ${barCls}" style="height:${hPct}%;"
-             title="${d.lbl}: ${partial}${display.toFixed(3)}&quot;${d.data?.recordCount ? ` (${d.data.recordCount} pts)` : ''}"></div>
+             title="${d.lbl}: ${partial}${val.toFixed(3)}&quot;${pts ? ` · ${pts} pts` : ''}"></div>
       </div>
-      <div class="et-bar-val">${partial}${display.toFixed(2)}"</div>
+      <div class="et-bar-val">${partial}${val.toFixed(2)}"</div>
       <div class="et-bar-lbl">${d.lbl}</div>
     </div>`;
   });
+
   document.getElementById('et-bar-chart').innerHTML = html;
 }
 
