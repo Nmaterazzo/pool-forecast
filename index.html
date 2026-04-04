@@ -852,22 +852,26 @@ function processRecordsToET(records){
 }
 
 // ── FETCH FROM AMBIENT ────────────────────────────────────────
-// Pull up to 288 records (last 24hrs at 5-min resolution)
+// Ambient's device endpoint with limit=288 and endDate pulls historical
+// records going back 24hrs from the given timestamp.
+// endDate = now in ms gives us the most recent 288 readings (5-min intervals).
+// API rate limit: 1 req/sec, 288 reqs/day per device — we cache aggressively.
 async function etFetchFromAPI(){
+  // end_date = current time in SECONDS (Unix timestamp, not ms)
+  // Parameter is end_date with underscore per Ambient API docs
+  // Returns 288 records going back 24hrs from end_date, newest-first
+  const end_date = Math.floor(Date.now() / 1000);
   const url = `https://rt.ambientweather.net/v1/devices/${ET_MAC}` +
-    `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=288`;
-  const res  = await fetch(url);
+    `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=288&end_date=${end_date}`;
+
+  const res = await fetch(url);
   if(!res.ok) throw new Error(`API ${res.status}`);
   const data = await res.json();
 
-  // Ambient returns array of devices, each with lastData or the records directly
-  // With limit=288 it returns an array of 288 data records for the device
   if(!Array.isArray(data) || data.length === 0) throw new Error('Empty response');
 
-  // If first item has lastData it's device list, not records
-  // With limit>1 it should be records directly
-  const records = data[0]?.lastData ? [data[0].lastData] : data;
-  return records;
+  // Returns array of data records directly, newest-first
+  return data;
 }
 
 // ── RENDER CHART ──────────────────────────────────────────────
@@ -966,7 +970,7 @@ function etApplyResults(entry, fromCache){
   const partialNote = entry.isPartialDay
     ? ` <span style="color:var(--yellow);">(partial day — ${entry.recordCount} of ~288 pts)</span>` : '';
   document.getElementById('et-formula').innerHTML =
-    `<span class="lbl">Daily averages from ${entry.recordCount || '?'} station readings</span>${partialNote}<br>` +
+    `<span class="lbl">Per-interval PM · ${entry.validCount || entry.recordCount || '?'} of 288 readings processed</span>${partialNote}<br>` +
     `Temp mean: <span>${entry.tmean}°F</span> · ` +
     `RH mean: <span>${entry.rh}%</span> · ` +
     `Wind mean: <span>${entry.wind} mph</span> (station-measured · no correction) · ` +
