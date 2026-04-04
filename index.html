@@ -695,11 +695,15 @@ async function init(){
 //  EVAPORATION MODULE — 288-record daily integration
 // ══════════════════════════════════════════════════════════════
 
+// ET Worker — handles nightly cron + KV history storage
+const ET_WORKER_URL = 'https://pool-et-worker.nmaterazzo2435.workers.dev';
+
+// Direct Ambient credentials (fallback if worker unreachable)
 const ET_API_KEY = 'e69bc01ace6e448d9dc47471ee49520bd2d77c740fa44c5faaa64727f50515c1';
 const ET_APP_KEY = '6c3da7cd61eb4102a36fc7fba93b16694edeb3c17cb54bd49bb3e42f465e8a2c';
 const ET_MAC     = 'C8:C9:A3:0E:CB:E2';
 
-// How long before we consider cached data stale and re-fetch (ms)
+// Cache TTL — worker handles history, this just caches today's live reading
 const ET_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 const ET_SCREEN_FACTORS = {open:1.0, screen:0.35, cover:0.05};
@@ -871,8 +875,24 @@ async function etFetchFromAPI(){
 // ── RENDER CHART ──────────────────────────────────────────────
 // Only shows bars for days with real logged data.
 // No estimated/fallback bars — chart grows naturally from first use.
-function etRenderChart(todayEt){
-  const days = etLogGetRange(8); // 7 past + today
+async function etFetchAndRenderChart(etIn){
+  let workerDays = null;
+  try{
+    const res = await fetch(`${ET_WORKER_URL}/et/history?days=8`);
+    if(res.ok) workerDays = await res.json();
+  }catch(e){}
+  etRenderChart(etIn, workerDays);
+}
+
+function etRenderChart(todayEt, workerDays){
+  // Merge worker history (server-side nightly data) with localStorage fallback
+  const localDays = etLogGetRange(8); // 7 past + today
+  const days = localDays.map((local, i) => {
+    if(workerDays && workerDays[i] && workerDays[i].data){
+      return { ...local, data: workerDays[i].data };
+    }
+    return local;
+  });
 
   // Only include days that have real data (or today with live ET)
   const realDays = days.filter(d => d.isToday ? todayEt !== null : d.data?.et != null);
@@ -984,7 +1004,8 @@ function etApplyResults(entry, fromCache){
     `Data: ${ageStr} · ` +
     `Wind shelter: <span>none — station already reads sheltered wind</span>`;
 
-  etRenderChart(etIn);
+  // Fetch worker history + render chart
+  etFetchAndRenderChart(etIn);
 }
 
 // ── FORCE REFRESH (bypass cache) ──────────────────────────────
@@ -1061,11 +1082,16 @@ function etSetScreen(mode){
 }
 
 // ── BOOT ──────────────────────────────────────────────────────
-// Render chart immediately from localStorage (shows historical bars right away)
-etRenderChart(null);
-// Run ET (uses cache if fresh, fetches if stale)
+// 1. Render chart from localStorage immediately (instant)
+etRenderChart(null, null);
+// 2. Try to hydrate chart from worker history in background
+fetch(`${ET_WORKER_URL}/et/history?days=8`)
+  .then(r => r.ok ? r.json() : null)
+  .then(workerDays => { if(workerDays) etRenderChart(null, workerDays); })
+  .catch(() => {});
+// 3. Run ET calculation (cache check → Ambient API → store)
 etRun();
-// Core pool forecast
+// 4. Core pool forecast
 init();
 </script>
 </body>
