@@ -861,7 +861,9 @@ async function etFetchFromAPI(){
   // Parameter is end_date with underscore per Ambient API docs
   // Returns 288 records going back 24hrs from end_date, newest-first
   const end_date = Math.floor(Date.now() / 1000);
-  const url = `https://rt.ambientweather.net/v1/devices/${ET_MAC}` +
+  // api.ambientweather.net is the REST/historical base URL
+  // rt.ambientweather.net is realtime only — returns latest snapshot regardless of limit
+  const url = `https://api.ambientweather.net/v1/devices/${ET_MAC}` +
     `?apiKey=${ET_API_KEY}&applicationKey=${ET_APP_KEY}&limit=288&end_date=${end_date}`;
 
   const res = await fetch(url);
