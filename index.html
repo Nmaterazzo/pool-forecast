@@ -785,14 +785,9 @@ function etLogGetRange(days){
 function processRecordsToET(records){
   if(!records || records.length === 0) throw new Error('No records');
 
-  // Filter to records from today (local date)
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayRecs = records.filter(r => {
-    if(!r.dateutc && !r.date) return true;
-    const d = new Date(r.dateutc || r.date);
-    return d.toISOString().split('T')[0] === todayStr;
-  });
-  const recs = todayRecs.length > 0 ? todayRecs : records;
+  // Use ALL 288 records — they span the last 24 hours regardless of date boundary.
+  // Don't filter by date — we want the full solar curve from the past 24hrs.
+  const recs = records;
   if(recs.length === 0) throw new Error('No records for today');
 
   // Each Ambient record = 5-min interval = 300 seconds
