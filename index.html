@@ -182,6 +182,36 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 .et-status{padding:9px 13px;font-size:.5rem;color:var(--muted);border-top:1px solid var(--border);line-height:1.7;}
 .et-status span{color:var(--text);}
 .et-status .err{color:var(--red);}
+.et-modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  align-items:flex-end;justify-content:center;}
+.et-modal-overlay.open{display:flex;}
+.et-modal{
+  background:var(--card);border:1px solid var(--border);border-bottom:none;
+  width:100%;max-width:520px;padding:0;border-radius:0;
+  max-height:80vh;overflow-y:auto;}
+.et-modal-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,.015);position:sticky;top:0;z-index:1;}
+.et-modal-title{font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;}
+.et-modal-close{background:none;border:none;color:var(--muted);font-size:1.2rem;
+  cursor:pointer;padding:0 4px;line-height:1;}
+.et-modal-close:hover{color:var(--text);}
+.et-modal-body{padding:13px;}
+.et-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-bottom:11px;}
+.et-stat-cell{background:var(--card);padding:9px 12px;}
+.et-stat-lbl{font-size:.44rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+.et-stat-val{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--text);}
+.et-stat-val.big{font-size:1.4rem;color:var(--blue);}
+.et-pool-row{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid var(--border);font-size:.54rem;}
+.et-pool-row:last-child{border-bottom:none;}
+.et-pool-key{color:var(--muted);}
+.et-pool-val{color:var(--text);font-weight:500;}
+.et-bar-col{cursor:pointer;}
+.et-bar-col:hover .et-bar{opacity:.8;}
 .et-status .cached{color:var(--muted);}
 .et-refresh-btn{
   font-family:'IBM Plex Mono',monospace;font-size:.44rem;letter-spacing:.06em;
@@ -313,6 +343,17 @@ body{min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);col
 
     <div class="et-status" id="et-status">Fetching station data...</div>
 
+  </div>
+</div>
+
+<!-- ET DAY DETAIL MODAL -->
+<div class="et-modal-overlay" id="et-modal-overlay" onclick="etCloseModal(event)">
+  <div class="et-modal">
+    <div class="et-modal-hdr">
+      <div class="et-modal-title" id="et-modal-title">Day Detail</div>
+      <button class="et-modal-close" onclick="etCloseModal()">✕</button>
+    </div>
+    <div class="et-modal-body" id="et-modal-body"></div>
   </div>
 </div>
 
@@ -928,10 +969,19 @@ function etRenderChart(todayEt, workerDays){
     const partial = !d.isToday && d.data?.isPartialDay ? '~' : '';
     const pts     = d.data?.validCount ?? d.data?.recordCount ?? '';
 
-    html += `<div class="et-bar-col">
+    // Encode day data for click handler
+    const dayData = d.isToday
+      ? { et: todayEt, lbl: d.lbl, key: d.key, isToday: true, ...window._lastStation ? {
+          tmean: window._lastStation.tempf,
+          rh: window._lastStation.humidity,
+          wind: window._lastStation.windspeedmph,
+          rs: null, recordCount: 288, validCount: 288 } : {} }
+      : { ...d.data, lbl: d.lbl, key: d.key, isToday: false };
+    const encoded = encodeURIComponent(JSON.stringify(dayData));
+
+    html += `<div class="et-bar-col" onclick="etOpenModal('${encoded}')">
       <div class="et-bar-wrap">
-        <div class="et-bar ${barCls}" style="height:${hPct}%;"
-             title="${d.lbl}: ${partial}${val.toFixed(3)}&quot;${pts ? ` · ${pts} pts` : ''}"></div>
+        <div class="et-bar ${barCls}" style="height:${hPct}%;"></div>
       </div>
       <div class="et-bar-val">${partial}${val.toFixed(2)}"</div>
       <div class="et-bar-lbl">${d.lbl}</div>
@@ -1079,6 +1129,91 @@ function etSetScreen(mode){
   const todayKey = new Date().toISOString().split('T')[0];
   const entry   = log[todayKey];
   if(entry) etApplyResults(entry, true);
+}
+
+// ── ET DAY DETAIL MODAL ───────────────────────────────────────
+function etOpenModal(encoded){
+  const d = JSON.parse(decodeURIComponent(encoded));
+  const et = d.et ?? 0;
+  const factor = ET_SCREEN_FACTORS[etScreenMode] || 1.0;
+
+  // Pool loss calcs
+  const pools = [
+    { lbl:'Open pool (450 sq ft)',   sqft:450, factor:1.0 },
+    { lbl:'Screened pool (–65%)',    sqft:450, factor:0.35 },
+    { lbl:'Small pool (250 sq ft)',  sqft:250, factor:1.0 },
+    { lbl:'Large pool (600 sq ft)',  sqft:600, factor:1.0 },
+  ];
+
+  const dateStr = d.key ? new Date(d.key + 'T12:00:00').toLocaleDateString('en-US',
+    { weekday:'long', month:'short', day:'numeric' }) : d.lbl;
+
+  let html = '';
+
+  // ET hero + station inputs
+  html += `<div class="et-stat-grid">
+    <div class="et-stat-cell" style="grid-column:1/-1;">
+      <div class="et-stat-lbl">Evapotranspiration</div>
+      <div class="et-stat-val big">${et.toFixed(4)}"<span style="font-size:.5rem;color:var(--muted);margin-left:4px;">per day</span></div>
+    </div>
+    <div class="et-stat-cell">
+      <div class="et-stat-lbl">Temp Mean</div>
+      <div class="et-stat-val">${d.tmean ? d.tmean + '°F' : '—'}</div>
+    </div>
+    <div class="et-stat-cell">
+      <div class="et-stat-lbl">RH Mean</div>
+      <div class="et-stat-val">${d.rh ? d.rh + '%' : '—'}</div>
+    </div>
+    <div class="et-stat-cell">
+      <div class="et-stat-lbl">Wind Mean</div>
+      <div class="et-stat-val">${d.wind != null ? d.wind + ' mph' : '—'}</div>
+    </div>
+    <div class="et-stat-cell">
+      <div class="et-stat-lbl">Solar Integrated</div>
+      <div class="et-stat-val">${d.rs != null ? d.rs + ' MJ/m²/day' : '—'}</div>
+    </div>
+    <div class="et-stat-cell">
+      <div class="et-stat-lbl">Station Records</div>
+      <div class="et-stat-val">${d.validCount ?? d.recordCount ?? '—'} of 288</div>
+    </div>
+    <div class="et-stat-cell">
+      <div class="et-stat-lbl">Partial Day</div>
+      <div class="et-stat-val" style="color:${d.isPartialDay ? 'var(--yellow)' : 'var(--green)'}">
+        ${d.isPartialDay ? 'Yes' : 'No'}
+      </div>
+    </div>
+  </div>`;
+
+  // Pool loss table
+  html += `<div style="font-size:.5rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;">Pool Water Loss</div>`;
+  pools.forEach(p => {
+    const adjEt  = et * p.factor;
+    const gDay   = (adjEt * p.sqft * 0.6233).toFixed(1);
+    const gWeek  = (adjEt * p.sqft * 0.6233 * 7).toFixed(0);
+    const inWeek = (adjEt * 7).toFixed(2);
+    html += `<div class="et-pool-row">
+      <span class="et-pool-key">${p.lbl}</span>
+      <span class="et-pool-val">${gDay} gal/day · ${inWeek}" /wk</span>
+    </div>`;
+  });
+
+  // Calculated at
+  if(d.calculatedAt){
+    const calcTime = new Date(d.calculatedAt).toLocaleString('en-US',
+      {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    html += `<div style="margin-top:10px;font-size:.46rem;color:var(--muted);">
+      Calculated: ${calcTime} · Method: Penman-Monteith per-interval
+    </div>`;
+  }
+
+  document.getElementById('et-modal-title').textContent = dateStr;
+  document.getElementById('et-modal-body').innerHTML = html;
+  document.getElementById('et-modal-overlay').classList.add('open');
+}
+
+function etCloseModal(e){
+  if(e && e.target !== document.getElementById('et-modal-overlay')) return;
+  document.getElementById('et-modal-overlay').classList.remove('open');
 }
 
 // ── BOOT ──────────────────────────────────────────────────────
